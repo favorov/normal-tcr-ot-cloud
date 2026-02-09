@@ -5,8 +5,7 @@ Calculate Wasserstein distance between two distributions from TSV files.
 
 import sys
 import pandas as pd
-from scipy.spatial.distance import wasserstein_distance
-from scipy.stats import wasserstein_distance as scipy_wasserstein
+from scipy.stats import wasserstein_distance
 
 
 def is_no_weights(value):
