@@ -48,26 +48,28 @@ def get_column_index(df, column_param):
 
 def load_and_prepare_distribution(filepath, freq_column, weights_column):
     """
-    Load TSV file and create a distribution from frequencies and optional weights.
+    Load TSV file and extract sample values and their weights.
     
     Parameters:
     -----------
     filepath : str
         Path to the TSV file
     freq_column : str or int
-        Column index or name for frequencies
+        Column index or name for sample values (pgen probabilities)
     weights_column : str or int
         Column index or name for weights, or "NO"/"off" to disable weights
     
     Returns:
     --------
-    tuple: (frequencies, weights)
+    tuple: (sample_values, weights)
+        sample_values: The pgen probabilities to compare
+        weights: The weights for each sample (or None for uniform weighting)
     """
     df = pd.read_csv(filepath, sep='\t')
     
-    # Get frequency column index
+    # Get sample values (pgen column)
     freq_idx = get_column_index(df, freq_column)
-    frequencies = df.iloc[:, freq_idx].values.astype(float)
+    sample_values = df.iloc[:, freq_idx].values.astype(float)
     
     # Check if we should use weights
     use_weights = not is_no_weights(weights_column)
@@ -77,38 +79,12 @@ def load_and_prepare_distribution(filepath, freq_column, weights_column):
             weights_idx = get_column_index(df, weights_column)
             weights = df.iloc[:, weights_idx].values.astype(float)
         except (ValueError, IndexError) as e:
-            print(f"Warning: {e}. Using unweighted distribution.")
+            print(f"Warning: {e}. Using uniform weights (all 1.0).")
             weights = None
     else:
         weights = None
     
-    return frequencies, weights
-
-
-def create_weighted_distribution(frequencies, weights):
-    """
-    Create a weighted distribution from frequencies and weights.
-    
-    Parameters:
-    -----------
-    frequencies : array-like
-        Array of frequencies
-    weights : array-like or None
-        Array of weights, or None for unweighted
-    
-    Returns:
-    --------
-    array: Probability distribution (normalized)
-    """
-    if weights is None:
-        # Unweighted distribution: just normalize frequencies
-        distribution = frequencies / frequencies.sum()
-    else:
-        # Weighted distribution: multiply frequencies by weights, then normalize
-        weighted_freq = frequencies * weights
-        distribution = weighted_freq / weighted_freq.sum()
-    
-    return distribution
+    return sample_values, weights
 
 
 def main():
@@ -143,15 +119,11 @@ def main():
     
     try:
         # Load data from both files
-        freq1, weights1 = load_and_prepare_distribution(filepath1, freq_column, weights_column)
-        freq2, weights2 = load_and_prepare_distribution(filepath2, freq_column, weights_column)
+        values1, weights1 = load_and_prepare_distribution(filepath1, freq_column, weights_column)
+        values2, weights2 = load_and_prepare_distribution(filepath2, freq_column, weights_column)
         
-        # Create distributions
-        dist1 = create_weighted_distribution(freq1, weights1)
-        dist2 = create_weighted_distribution(freq2, weights2)
-        
-        # Calculate Wasserstein distance
-        wd = wasserstein_distance(dist1, dist2)
+        # Calculate Wasserstein distance between the two weighted distributions
+        wd = wasserstein_distance(values1, values2, u_weights=weights1, v_weights=weights2)
         
         # Display results
         print("=" * 60)
