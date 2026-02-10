@@ -189,9 +189,10 @@ def main():
         barycenter = np.ones(len(grid)) / len(grid)
         
         reg = 0.1
+        # Precompute cost matrix (L1 distance, grid already log-spaced)
+        cost_matrix = np.abs(grid.reshape(-1, 1) - grid.reshape(1, -1))
+        
         for iteration in range(10):
-            # Compute cost matrix
-            cost_matrix = ot.dist(grid.reshape(-1, 1), grid.reshape(-1, 1))
             
             # Update barycenter by averaging Wasserstein interpolations
             new_barycenter = np.zeros(len(grid))

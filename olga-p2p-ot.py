@@ -195,8 +195,8 @@ def main():
         dist2 = discretize_on_grid(values2, weights2, grid)
         
         # Calculate Wasserstein distance on the discretized distributions
-        # Create cost matrix (Euclidean distance between grid points)
-        cost_matrix = ot.dist(grid.reshape(-1, 1), grid.reshape(-1, 1))
+        # Create cost matrix (L1 distance, grid already log-spaced)
+        cost_matrix = np.abs(grid.reshape(-1, 1) - grid.reshape(1, -1))
         
         # Compute Earth Mover's Distance (Wasserstein)
         wd = ot.emd2(dist1, dist2, cost_matrix)
