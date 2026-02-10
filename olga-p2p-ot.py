@@ -1,17 +1,19 @@
 #!/usr/bin/env python3
 """
 Calculate Wasserstein distance between two distributions from TSV files.
+Uses logarithmic grid for discretization.
 """
 
 import sys
 import pandas as pd
-from scipy.stats import wasserstein_distance
+import numpy as np
+import ot
 
 
 def is_no_weights(value):
     """Check if the weights column should be disabled."""
     if isinstance(value, str):
-        return value.lower() in ["no", "off", "none", "disabled"]
+        return value.lower() in ["no", "off", "none", "disabled", "ones"]
     return False
 
 
@@ -63,7 +65,7 @@ def load_and_prepare_distribution(filepath, freq_column, weights_column):
     --------
     tuple: (sample_values, weights)
         sample_values: The pgen probabilities to compare
-        weights: The weights for each sample (or None for uniform weighting)
+        weights: The weights for each sample (normalized)
     """
     df = pd.read_csv(filepath, sep='\t')
     
@@ -80,11 +82,56 @@ def load_and_prepare_distribution(filepath, freq_column, weights_column):
             weights = df.iloc[:, weights_idx].values.astype(float)
         except (ValueError, IndexError) as e:
             print(f"Warning: {e}. Using uniform weights (all 1.0).")
-            weights = None
+            weights = np.ones(len(sample_values))
     else:
-        weights = None
+        weights = np.ones(len(sample_values))
+    
+    # Normalize weights
+    weights = weights / weights.sum()
     
     return sample_values, weights
+
+
+def discretize_on_grid(values, weights, grid):
+    """
+    Discretize a weighted distribution onto a log-spaced grid.
+    
+    Parameters:
+    -----------
+    values : array
+        Sample values
+    weights : array
+        Weights for each sample (normalized)
+    grid : array
+        Grid points for discretization
+    
+    Returns:
+    --------
+    array: Discretized probability distribution on the grid
+    """
+    # Filter out zero values
+    mask = values > 0
+    values_filtered = values[mask]
+    weights_filtered = weights[mask]
+    
+    if len(values_filtered) == 0:
+        # Use uniform if no valid values
+        return np.ones(len(grid)) / len(grid)
+    
+    # Define bin edges for consistent histogramming
+    bin_edges = np.concatenate([[grid[0] / 2], (grid[:-1] + grid[1:]) / 2, [grid[-1] * 2]])
+    
+    # Create histogram on the grid with consistent bins
+    hist, _ = np.histogram(values_filtered, bins=bin_edges, weights=weights_filtered)
+    
+    # Normalize to probability distribution
+    hist_sum = hist.sum()
+    if hist_sum > 0:
+        hist = hist / hist_sum
+    else:
+        hist = np.ones(len(grid)) / len(grid)
+    
+    return hist
 
 
 def main():
@@ -122,14 +169,43 @@ def main():
         values1, weights1 = load_and_prepare_distribution(filepath1, freq_column, weights_column)
         values2, weights2 = load_and_prepare_distribution(filepath2, freq_column, weights_column)
         
-        # Calculate Wasserstein distance between the two weighted distributions
-        wd = wasserstein_distance(values1, values2, u_weights=weights1, v_weights=weights2)
+        print(f"  Loaded {len(values1)} samples from file 1")
+        print(f"  Loaded {len(values2)} samples from file 2")
+        
+        # Create common log-spaced grid
+        all_values = np.concatenate([values1, values2])
+        all_values = all_values[all_values > 0]  # Filter out zeros
+        
+        if len(all_values) == 0:
+            print("Error: No valid (non-zero) values found in data")
+            sys.exit(1)
+        
+        min_val = all_values.min()
+        max_val = all_values.max()
+        
+        n_grid = 1000
+        grid = np.logspace(np.log10(min_val), np.log10(max_val), n_grid)
+        
+        print(f"  Created log-spaced grid with {n_grid} points")
+        print(f"  Range: [{min_val:.3e}, {max_val:.3e}]")
+        print()
+        
+        # Discretize both distributions onto the grid
+        dist1 = discretize_on_grid(values1, weights1, grid)
+        dist2 = discretize_on_grid(values2, weights2, grid)
+        
+        # Calculate Wasserstein distance on the discretized distributions
+        # Create cost matrix (Euclidean distance between grid points)
+        cost_matrix = ot.dist(grid.reshape(-1, 1), grid.reshape(-1, 1))
+        
+        # Compute Earth Mover's Distance (Wasserstein)
+        wd = ot.emd2(dist1, dist2, cost_matrix)
         
         # Display results
         print("=" * 60)
         print("WASSERSTEIN (OPTIMAL TRANSPORT) DISTANCE")
         print("=" * 60)
-        print(f"Distance: {wd:.10f}")
+        print(f"Distance: {wd:.10e}")
         print("=" * 60)
         
     except FileNotFoundError as e:
