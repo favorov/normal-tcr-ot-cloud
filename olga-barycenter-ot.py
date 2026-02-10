@@ -144,14 +144,15 @@ def main():
         max_val = all_concatenated.max()
         
         # Create log-spaced grid
-        n_grid = 1000
+        # Note: Grid size should be ~2-3x smaller than average number of samples
+        # to avoid too sparse distributions (which make barycenter uniform)
+        n_grid = 100
         grid = np.logspace(np.log10(min_val), np.log10(max_val), n_grid)
         
         print()
         print(f"Creating common support grid with {n_grid} points")
         print(f"  Range: [{min_val:.3e}, {max_val:.3e}]")
         print()
-        print("Computing Wasserstein barycenter...")
         
         # Discretize each distribution onto the grid
         # Use histogram with consistent binning
@@ -184,34 +185,23 @@ def main():
         # Stack into a matrix (n_distributions x n_grid)
         distributions_matrix = np.array(discretized_distributions)
         
-        # Compute barycenter using iterative approach with Sinkhorn
-        # Initialize barycenter as uniform
-        barycenter = np.ones(len(grid)) / len(grid)
-        
-        reg = 0.1
+        # Compute barycenter using POT's barycenter algorithm
         # Precompute cost matrix (L1 distance, grid already log-spaced)
         cost_matrix = np.abs(grid.reshape(-1, 1) - grid.reshape(1, -1))
         
-        for iteration in range(10):
-            
-            # Update barycenter by averaging Wasserstein interpolations
-            new_barycenter = np.zeros(len(grid))
-            
-            for dist in distributions_matrix:
-                # Compute optimal transport using Sinkhorn
-                P = ot.sinkhorn(dist, barycenter, cost_matrix, reg)
-                # Weighted update
-                new_barycenter += P.sum(axis=0)
-            
-            new_barycenter /= len(distributions_matrix)
-            new_barycenter /= new_barycenter.sum()
-            
-            # Check convergence
-            if np.linalg.norm(new_barycenter - barycenter) < 1e-6:
-                print(f"Converged at iteration {iteration}")
-                break
-            
-            barycenter = new_barycenter
+        print("Computing Wasserstein barycenter...")
+        
+        # Use linear program barycenter (exact optimal transport solution)
+        # Note: ot.bregman.barycenter() (Sinkhorn) fails with sparse discretized data,
+        # returning uniform distribution. LP solver is more robust but slower.
+        barycenter = ot.lp.barycenter(
+            distributions_matrix.T,  # Transpose: columns are distributions
+            cost_matrix,
+            weights=None,  # Equal weights for all distributions
+            verbose=False
+        )
+        
+        print(f"Barycenter computation complete")
         
         # Display results
         print("=" * 60)
