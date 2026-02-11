@@ -252,9 +252,6 @@ def main():
         print(f"Saving plot to: {output_path}")
         plt.savefig(output_path, dpi=150, bbox_inches='tight')
         
-        # Display plot
-        plt.show()
-        
         print("Plot generated successfully!")
         
     except Exception as e:
