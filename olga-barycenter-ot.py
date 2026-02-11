@@ -93,28 +93,45 @@ def load_distribution(filepath, freq_column, weights_column):
 
 def main():
     """Main function."""
-    if len(sys.argv) < 4:
-        print("Usage: python olga-barycenter-ot.py <input_folder> <freq_column> <weights_column> [n_grid]")
+    if len(sys.argv) < 2:
+        print("Usage: python olga-barycenter-ot.py <input_folder> [--freq-column <col>] [--weights-column <col>] [--n-grid <n>]")
         print("\nParameters:")
-        print("  input_folder    : Path to folder containing TSV files")
-        print("  freq_column     : Column index (0-based) or column name for sample values")
-        print("  weights_column  : Column index (0-based) or column name for weights,")
-        print("                    or 'NO'/'off' to disable weights")
-        print("  n_grid          : Number of grid points (default: 200)")
+        print("  input_folder      : Path to folder containing TSV files")
+        print("  --freq-column     : Column index (0-based) or column name for sample values (default: pgen)")
+        print("  --weights-column  : Column index (0-based) or column name for weights, or 'off' (default: off)")
+        print("  --n-grid          : Number of grid points (default: 200)")
+        print("\nExamples:")
+        print("  python olga-barycenter-ot.py input/test-cloud-Tumeh2014")
+        print("  python olga-barycenter-ot.py input/test-cloud-Tumeh2014 --freq-column pgen --weights-column duplicate_frequency_percent")
+        print("  python olga-barycenter-ot.py input/test-cloud-Tumeh2014 --n-grid 500")
         sys.exit(1)
     
     input_folder = sys.argv[1]
-    freq_column = sys.argv[2]
-    weights_column = sys.argv[3]
+    freq_column = "pgen"
+    weights_column = "off"
     n_grid = 200
-    if len(sys.argv) >= 5:
-        try:
-            n_grid = int(sys.argv[4])
-        except ValueError:
-            print(f"Error: n_grid must be an integer, got '{sys.argv[4]}'")
-            sys.exit(1)
-        if n_grid <= 1:
-            print("Error: n_grid must be > 1")
+    
+    # Parse named arguments
+    i = 2
+    while i < len(sys.argv):
+        if sys.argv[i] == "--freq-column" and i + 1 < len(sys.argv):
+            freq_column = sys.argv[i + 1]
+            i += 2
+        elif sys.argv[i] == "--weights-column" and i + 1 < len(sys.argv):
+            weights_column = sys.argv[i + 1]
+            i += 2
+        elif sys.argv[i] == "--n-grid" and i + 1 < len(sys.argv):
+            try:
+                n_grid = int(sys.argv[i + 1])
+            except ValueError:
+                print(f"Error: --n-grid must be an integer, got '{sys.argv[i + 1]}'")
+                sys.exit(1)
+            if n_grid <= 1:
+                print("Error: --n-grid must be > 1")
+                sys.exit(1)
+            i += 2
+        else:
+            print(f"Error: Unknown argument '{sys.argv[i]}'")
             sys.exit(1)
     
     # Find all TSV files

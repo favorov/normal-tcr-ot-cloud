@@ -136,32 +136,49 @@ def discretize_on_grid(values, weights, grid):
 
 def main():
     """Main function."""
-    if len(sys.argv) < 6:
-        print("Usage: python olga-p2p-ot.py <input_folder> <file1> <file2> <freq_column> <weights_column> [n_grid]")
+    if len(sys.argv) < 4:
+        print("Usage: python olga-p2p-ot.py <input_folder> <file1> <file2> [--freq-column <col>] [--weights-column <col>] [--n-grid <n>]")
         print("\nParameters:")
-        print("  input_folder    : Path to folder containing TSV files")
-        print("  file1           : Name of first TSV file")
-        print("  file2           : Name of second TSV file")
-        print("  freq_column     : Column index (0-based) or column name for frequencies")
-        print("  weights_column  : Column index (0-based) or column name for weights,")
-        print("                    or 'NO'/'off' to disable weights")
-        print("  n_grid          : Number of grid points (default: 200)")
+        print("  input_folder      : Path to folder containing TSV files")
+        print("  file1             : Name of first TSV file")
+        print("  file2             : Name of second TSV file")
+        print("  --freq-column     : Column index (0-based) or column name for frequencies (default: pgen)")
+        print("  --weights-column  : Column index (0-based) or column name for weights, or 'off' (default: off)")
+        print("  --n-grid          : Number of grid points (default: 200)")
+        print("\nExamples:")
+        print("  python olga-p2p-ot.py input/test-cloud-Tumeh2014 Patient01_Base_tcr_pgen.tsv Patient02_Base_tcr_pgen.tsv")
+        print("  python olga-p2p-ot.py input/test-cloud-Tumeh2014 Patient01_Base_tcr_pgen.tsv Patient02_Base_tcr_pgen.tsv --freq-column pgen --weights-column duplicate_frequency_percent")
+        print("  python olga-p2p-ot.py input/test-cloud-Tumeh2014 Patient01_Base_tcr_pgen.tsv Patient02_Base_tcr_pgen.tsv --n-grid 500")
         sys.exit(1)
     
     input_folder = sys.argv[1]
     file1 = sys.argv[2]
     file2 = sys.argv[3]
-    freq_column = sys.argv[4]  # Keep as string, get_column_index handles both int and str
-    weights_column = sys.argv[5]
+    freq_column = "pgen"
+    weights_column = "off"
     n_grid = 200
-    if len(sys.argv) >= 7:
-        try:
-            n_grid = int(sys.argv[6])
-        except ValueError:
-            print(f"Error: n_grid must be an integer, got '{sys.argv[6]}'")
-            sys.exit(1)
-        if n_grid <= 1:
-            print("Error: n_grid must be > 1")
+    
+    # Parse named arguments
+    i = 4
+    while i < len(sys.argv):
+        if sys.argv[i] == "--freq-column" and i + 1 < len(sys.argv):
+            freq_column = sys.argv[i + 1]
+            i += 2
+        elif sys.argv[i] == "--weights-column" and i + 1 < len(sys.argv):
+            weights_column = sys.argv[i + 1]
+            i += 2
+        elif sys.argv[i] == "--n-grid" and i + 1 < len(sys.argv):
+            try:
+                n_grid = int(sys.argv[i + 1])
+            except ValueError:
+                print(f"Error: --n-grid must be an integer, got '{sys.argv[i + 1]}'")
+                sys.exit(1)
+            if n_grid <= 1:
+                print("Error: --n-grid must be > 1")
+                sys.exit(1)
+            i += 2
+        else:
+            print(f"Error: Unknown argument '{sys.argv[i]}'")
             sys.exit(1)
     
     # Construct full file paths
