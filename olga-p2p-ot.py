@@ -211,6 +211,7 @@ def main():
         min_val = all_values.min()
         max_val = all_values.max()
         
+        # Create log-spaced grid
         grid = np.logspace(np.log10(min_val), np.log10(max_val), n_grid)
         
         print(f"  Created log-spaced grid with {n_grid} points")

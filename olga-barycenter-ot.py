@@ -182,6 +182,8 @@ def main():
         print()
         
         # Discretize each distribution onto the grid
+        
+        # Discretize each distribution onto the grid
         # Use histogram with consistent binning
         discretized_distributions = []
         
