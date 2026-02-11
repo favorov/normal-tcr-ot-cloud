@@ -2,7 +2,56 @@ We want to make a normal tissue TCR-B AA junction generation probability distrib
 
 # from your project folder
 python3 -m venv .venv
-source .venv/bin/activat
+source .venv/bin/activate
 
-olga-p2p-ot.py -- just read two files, calculates OT distance between distributions
+olga-p2p-ot.py -- reads two files, calculates OT distance between distributions on a shared log-spaced grid
+
+Usage:
+python3 olga-p2p-ot.py <input_folder> <file1> <file2> <freq_column> <weights_column> [n_grid]
+
+Parameters:
+- input_folder: folder with TSV files
+- file1: name of first TSV file
+- file2: name of second TSV file
+- freq_column: column index (0-based) or column name for sample values (e.g., pgen)
+- weights_column: column index/name for weights or 'off' to disable weights
+- n_grid: number of grid points (default: 200)
+
+Example:
+python3 olga-p2p-ot.py input/test-cloud-Tumeh2014 Patient01_Base_tcr_pgen.tsv Patient02_Base_tcr_pgen.tsv pgen off 200
+
+olga-barycenter-ot.py -- reads all TSV files in a folder and computes the
+Wasserstein barycenter on a shared log-spaced grid using linear-program OT
+(more robust than Sinkhorn for sparse grids).
+
+Usage:
+python3 olga-barycenter-ot.py <input_folder> <freq_column> <weights_column> [n_grid]
+
+Parameters:
+- input_folder: folder with TSV files
+- freq_column: column index (0-based) or column name for sample values (e.g., pgen)
+- weights_column: column index/name for weights or 'off' to disable weights
+- n_grid: number of grid points (default: 200)
+
+Example:
+python3 olga-barycenter-ot.py input/test-cloud-Tumeh2014 pgen duplicate_frequency_percent 200
+
+olga-plot-barycenter.py -- reads all TSV files in a folder and plots them alongside
+the Wasserstein barycenter. Individual distributions shown in light gray, barycenter
+highlighted in red with thicker line.
+
+Usage:
+python3 olga-plot-barycenter.py <input_folder> [barycenter_file] [--freq-column <col>] [--weights-column <col>]
+
+Parameters:
+- input_folder: folder with TSV files
+- barycenter_file: path to barycenter NPZ file (default: barycenter.npz in input_folder)
+  Can be a relative or absolute path (e.g., ~/data/mybarycenter.npz)
+- --freq-column: column index/name for sample values (default: pgen)
+- --weights-column: column index/name for weights or 'off' (default: off)
+
+Examples:
+python3 olga-plot-barycenter.py input/test-cloud-Tumeh2014
+python3 olga-plot-barycenter.py input/test-cloud-Tumeh2014 ~/data/custom_barycenter.npz
+python3 olga-plot-barycenter.py input/test-cloud-Tumeh2014 barycenter.npz --freq-column pgen --weights-column duplicate_frequency_percent
 
