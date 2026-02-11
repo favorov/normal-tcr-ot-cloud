@@ -136,8 +136,8 @@ def discretize_on_grid(values, weights, grid):
 
 def main():
     """Main function."""
-    if len(sys.argv) < 5:
-        print("Usage: python olga-p2p-ot.py <input_folder> <file1> <file2> <freq_column> <weights_column>")
+    if len(sys.argv) < 6:
+        print("Usage: python olga-p2p-ot.py <input_folder> <file1> <file2> <freq_column> <weights_column> [n_grid]")
         print("\nParameters:")
         print("  input_folder    : Path to folder containing TSV files")
         print("  file1           : Name of first TSV file")
@@ -145,6 +145,7 @@ def main():
         print("  freq_column     : Column index (0-based) or column name for frequencies")
         print("  weights_column  : Column index (0-based) or column name for weights,")
         print("                    or 'NO'/'off' to disable weights")
+        print("  n_grid          : Number of grid points (default: 200)")
         sys.exit(1)
     
     input_folder = sys.argv[1]
@@ -152,6 +153,16 @@ def main():
     file2 = sys.argv[3]
     freq_column = sys.argv[4]  # Keep as string, get_column_index handles both int and str
     weights_column = sys.argv[5]
+    n_grid = 200
+    if len(sys.argv) >= 7:
+        try:
+            n_grid = int(sys.argv[6])
+        except ValueError:
+            print(f"Error: n_grid must be an integer, got '{sys.argv[6]}'")
+            sys.exit(1)
+        if n_grid <= 1:
+            print("Error: n_grid must be > 1")
+            sys.exit(1)
     
     # Construct full file paths
     filepath1 = f"{input_folder}/{file1}"
@@ -183,7 +194,6 @@ def main():
         min_val = all_values.min()
         max_val = all_values.max()
         
-        n_grid = 1000
         grid = np.logspace(np.log10(min_val), np.log10(max_val), n_grid)
         
         print(f"  Created log-spaced grid with {n_grid} points")

@@ -94,17 +94,28 @@ def load_distribution(filepath, freq_column, weights_column):
 def main():
     """Main function."""
     if len(sys.argv) < 4:
-        print("Usage: python olga-barycenter-ot.py <input_folder> <freq_column> <weights_column>")
+        print("Usage: python olga-barycenter-ot.py <input_folder> <freq_column> <weights_column> [n_grid]")
         print("\nParameters:")
         print("  input_folder    : Path to folder containing TSV files")
         print("  freq_column     : Column index (0-based) or column name for sample values")
         print("  weights_column  : Column index (0-based) or column name for weights,")
         print("                    or 'NO'/'off' to disable weights")
+        print("  n_grid          : Number of grid points (default: 200)")
         sys.exit(1)
     
     input_folder = sys.argv[1]
     freq_column = sys.argv[2]
     weights_column = sys.argv[3]
+    n_grid = 200
+    if len(sys.argv) >= 5:
+        try:
+            n_grid = int(sys.argv[4])
+        except ValueError:
+            print(f"Error: n_grid must be an integer, got '{sys.argv[4]}'")
+            sys.exit(1)
+        if n_grid <= 1:
+            print("Error: n_grid must be > 1")
+            sys.exit(1)
     
     # Find all TSV files
     tsv_files = sorted(glob.glob(os.path.join(input_folder, "*.tsv")))
@@ -146,7 +157,6 @@ def main():
         # Create log-spaced grid
         # Note: Grid size should be ~2-3x smaller than average number of samples
         # to avoid too sparse distributions (which make barycenter uniform)
-        n_grid = 100
         grid = np.logspace(np.log10(min_val), np.log10(max_val), n_grid)
         
         print()
