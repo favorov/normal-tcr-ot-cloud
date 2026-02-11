@@ -40,22 +40,3 @@ python3 olga-barycenter-ot.py input/test-cloud-Tumeh2014
 python3 olga-barycenter-ot.py input/test-cloud-Tumeh2014 --freq-column pgen --weights-column duplicate_frequency_percent
 python3 olga-barycenter-ot.py input/test-cloud-Tumeh2014 --n-grid 500
 
-olga-plot-barycenter.py -- reads all TSV files in a folder and plots them alongside
-the Wasserstein barycenter. Individual distributions shown in light gray, barycenter
-highlighted in red with thicker line.
-
-Usage:
-python3 olga-plot-barycenter.py <input_folder> [barycenter_file] [--freq-column <col>] [--weights-column <col>]
-
-Parameters:
-- input_folder: folder with TSV files
-- barycenter_file: path to barycenter NPZ file (default: barycenter.npz in input_folder)
-  Can be a relative or absolute path (e.g., ~/data/mybarycenter.npz)
-- --freq-column: column index/name for sample values (default: pgen)
-- --weights-column: column index/name for weights or 'off' (default: off)
-
-Examples:
-python3 olga-plot-barycenter.py input/test-cloud-Tumeh2014
-python3 olga-plot-barycenter.py input/test-cloud-Tumeh2014 ~/data/custom_barycenter.npz
-python3 olga-plot-barycenter.py input/test-cloud-Tumeh2014 barycenter.npz --freq-column pgen --weights-column duplicate_frequency_percent
-
