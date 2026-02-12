@@ -25,6 +25,7 @@ def main():
         print("  --weights-column <col> : Column index or name for weights, or 'off' (default: off)")
         print("  --barycenter <file>  : Custom barycenter file (default: barycenter.npz)")
         print("  --all                : Explicitly process all files (same as providing no file)")
+        print("  --pipeline           : Output only distance value(s) (for use in scripts/pipelines)")
         print("\nExamples:")
         print("  # Single file")
         print("  python olga-p2b-ot.py input/test-cloud-Tumeh2014 Patient01_Base_tcr_pgen.tsv")
@@ -35,6 +36,9 @@ def main():
         print()
         print("  # Custom barycenter")
         print("  python olga-p2b-ot.py input/test-cloud-Tumeh2014 Patient01_Base_tcr_pgen.tsv --barycenter my_barycenter.npz")
+        print()
+        print("  # Pipeline mode (only distance output)")
+        print("  python olga-p2b-ot.py input/test-cloud-Tumeh2014 Patient01_Base_tcr_pgen.tsv --pipeline")
         sys.exit(1)
     
     input_folder = Path(sys.argv[1])
@@ -45,6 +49,7 @@ def main():
     barycenter_file = "barycenter.npz"
     single_file = None
     batch_mode = False
+    pipeline_mode = False
     
     # Parse arguments
     i = 2
@@ -63,6 +68,9 @@ def main():
         elif arg == "--all":
             batch_mode = True
             i += 1
+        elif arg == "--pipeline":
+            pipeline_mode = True
+            i += 1
         elif arg.endswith('.tsv') and single_file is None:
             single_file = arg
             i += 1
@@ -77,36 +85,44 @@ def main():
     # Load barycenter
     barycenter_path = input_folder / barycenter_file
     if not barycenter_path.exists():
-        print(f"Error: Barycenter file not found: {barycenter_path}")
-        print(f"Please run olga-barycenter-ot.py first to compute the barycenter.")
+        if not pipeline_mode:
+            print(f"Error: Barycenter file not found: {barycenter_path}")
+            print(f"Please run olga-barycenter-ot.py first to compute the barycenter.")
         sys.exit(1)
     
-    print(f"Loading barycenter from: {barycenter_path}")
+    if not pipeline_mode:
+        print(f"Loading barycenter from: {barycenter_path}")
     try:
         grid, barycenter_weights = load_barycenter(str(barycenter_path))
-        print(f"  Grid size: {len(grid)}")
-        print(f"  Grid range: [{grid.min():.3e}, {grid.max():.3e}]")
-        print()
+        if not pipeline_mode:
+            print(f"  Grid size: {len(grid)}")
+            print(f"  Grid range: [{grid.min():.3e}, {grid.max():.3e}]")
+            print()
     except Exception as e:
-        print(f"Error loading barycenter: {e}")
+        if not pipeline_mode:
+            print(f"Error loading barycenter: {e}")
         sys.exit(1)
     
     # Get files to process
     if batch_mode:
         files_to_process = sorted(input_folder.glob("*.tsv"))
         if len(files_to_process) == 0:
-            print(f"Error: No TSV files found in {input_folder}")
+            if not pipeline_mode:
+                print(f"Error: No TSV files found in {input_folder}")
             sys.exit(1)
-        print(f"Batch mode: Processing {len(files_to_process)} file(s)")
-        print()
+        if not pipeline_mode:
+            print(f"Batch mode: Processing {len(files_to_process)} file(s)")
+            print()
     else:
         file_path = input_folder / single_file
         if not file_path.exists():
-            print(f"Error: File not found: {file_path}")
+            if not pipeline_mode:
+                print(f"Error: File not found: {file_path}")
             sys.exit(1)
         files_to_process = [file_path]
-        print(f"Single file mode")
-        print()
+        if not pipeline_mode:
+            print(f"Single file mode")
+            print()
     
     # Process files
     results = []
@@ -134,7 +150,7 @@ def main():
                 'n_samples': len(values)
             })
             
-            if not batch_mode:
+            if not batch_mode and not pipeline_mode:
                 # Single file: detailed output
                 print(f"File: {file_path.name}")
                 print(f"  Samples: {len(values)}")
@@ -142,13 +158,24 @@ def main():
                 print()
         
         except Exception as e:
-            print(f"Error processing {file_path.name}: {e}")
+            if not pipeline_mode:
+                print(f"Error processing {file_path.name}: {e}")
             if not batch_mode:
                 sys.exit(1)
             continue
     
     # Display results
-    if batch_mode:
+    if pipeline_mode:
+        # Pipeline mode: output only distance values
+        if batch_mode:
+            # Batch: one distance per line
+            results.sort(key=lambda x: x['distance'])
+            for r in results:
+                print(f"{r['distance']:.10e}")
+        else:
+            # Single file: just the distance
+            print(f"{results[0]['distance']:.10e}")
+    elif batch_mode:
         # Sort by distance
         results.sort(key=lambda x: x['distance'])
         
