@@ -562,3 +562,158 @@ done
 - **Автоматическое расширение grid для out-of-sample данных** ✅ **NEW!**
 
 **Все задачи завершены!**
+
+---
+
+## Улучшение удобства использования (13 февраля 2026)
+
+### Изменение 1: Умный поиск колонок в load_distribution()
+
+**Мотивация:** Частый случай — пользователь помнит примерное имя колонки, но не точное.
+
+**Реализована функция _find_column_index()** с поддержкой трёх режимов:
+
+**1. Точное совпадение (как раньше):**
+```bash
+--freq-column pgen
+--weights-column duplicate_frequency_percent
+```
+
+**2. Уникальное частичное совпадение (новое!):**
+```bash
+# Вместо полного имени можно использовать подстроку
+--weights-column duplicate_frequency_p  # найдёт 'duplicate_frequency_percent'
+--weights-column frequency_percent      # найдёт 'duplicate_frequency_percent'
+--freq-column pge                       # найдёт 'pgen'
+```
+
+**3. По индексу (как раньше):**
+```bash
+--freq-column 22
+--weights-column 18
+```
+
+**Гибкая диагностика ошибок:**
+
+```bash
+# Неоднозначная подстрока
+--weights-column duplicate
+# Error: Parameter 'weights_column': ambiguous column specification 'duplicate'
+#        Multiple matches found: ['duplicate_count', 'duplicate_frequency_percent']
+#        Please use a more specific name or exact column name.
+
+# Несуществующая колонка
+--freq-column xyz
+# Error: Parameter 'freq_column': no column found matching 'xyz'
+#        Available columns: ['sequence_id', ..., 'pgen']
+
+# Индекс вне диапазона
+--freq-column 100
+# Error: Parameter 'freq_column': column index 100 is out of range
+#        Available columns: [...]
+```
+
+**Алгоритм:**
+```python
+def _find_column_index(df, column_spec, param_name):
+    """
+    1. Если Int → проверить диапазон, вернуть индекс
+    2. Если Str:
+       a. Точное совпадение → вернуть индекс
+       b. Подстроки:
+          - 0 совпадений → Error: not found
+          - 1 совпадение → вернуть индекс
+          - >1 совпадений → Error: ambiguous
+    """
+```
+
+**Тестирование:**
+```
+✓ Exact match 'pgen'
+✓ Substring 'duplicate_frequency_p' → 'duplicate_frequency_percent'
+✓ Ambiguous 'duplicate' → ERROR (correct)
+✓ Non-existent 'xyz' → ERROR (correct)
+✓ Index 22 for pgen
+✓ Out of range index → ERROR (correct)
+✓ Integration with both p2p and p2b scripts
+```
+
+### Изменение 2: Единообразная обработка parameter errors
+
+**Проблема:** p2p выводил ошибки конфигурации всегда, p2b выводил только в нормальном режиме
+
+```python
+# p2p (ПРАВИЛЬНО):
+except Exception as e:
+    print(f"Error: {e}")
+    sys.exit(1)
+
+# p2b (НЕПРАВИЛЬНО):
+except Exception as e:
+    if not pipeline_mode:  # ← блокировал вывод!
+        print(f"Error processing {file_path.name}: {e}")
+```
+
+**Решение — разделить обработку исключений:**
+
+```python
+# olga-p2b-ot.py: Parameter errors (ValueError) - ВСЕГДА выводятся
+except ValueError as e:
+    print(f"Error: {e}")
+    sys.exit(1)
+
+# Другие ошибки обработки - выводятся в зависимости от режима
+except Exception as e:
+    if not pipeline_mode:
+        print(f"Error processing {file_path.name}: {e}")
+    if not batch_mode:
+        sys.exit(1)
+    continue
+```
+
+**Результат:**
+```bash
+# Ошибка конфигурации видна ВСЕ режимах
+python3 olga-p2b-ot.py ... --weights-column duplicate
+# Error: Parameter 'weights_column': ambiguous column specification...
+# (выводится, даже если --pipeline или batch mode)
+
+# Работает корректно
+python3 olga-p2b-ot.py ... --weights-column duplicate_frequency_p
+# ✓ Success
+```
+
+**Тестирование:**
+```
+✓ Single file mode - диагностика видна
+✓ Pipeline mode - диагностика видна
+✓ Batch mode - диагностика видна при первой же ошибке
+✓ Нормальная работа со substring match - работает
+```
+
+### Обновлённое состояние (13 февраля 2026)
+
+**Улучшена функциональность:**
+- ✅ Умный поиск колонок с поддержкой substring matching
+- ✅ Единообразная система диагностики (параметры всегда выводятся)
+- ✅ Лучше UX — можно писать неполные имена колонок
+- ✅ Лучше DX — ошибки конфигурации видны всегда
+
+**Все готовые инструменты теперь:**
+1. ✅ `ot_utils.py` — добавлена `_find_column_index()` с умным поиском
+2. ✅ `olga-barycenter-ot.py` — использует новый механизм поиска
+3. ✅ `olga-plot-barycenter.py` — использует новый механизм поиска
+4. ✅ `olga-p2p-ot.py` — использует новый механизм поиска, parameter errors всегда видны
+5. ✅ `olga-p2b-ot.py` — использует новый механизм поиска, parameter errors всегда видны
+
+**Итоговая функциональность:**
+- Правильная метрика (log_l1) ✅
+- Математическая консистентность ✅
+- Модульная архитектура ✅
+- Pipeline-ready ✅
+- Гибкие режимы вывода ✅
+- Автоматическое расширение grid ✅
+- **Умный поиск колонок** ✅ **NEW!**
+- **Единообразная диагностика** ✅ **NEW!**
+
+**Проект стабилизирован и готов к использованию!**

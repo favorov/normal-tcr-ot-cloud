@@ -8,6 +8,62 @@ import pandas as pd
 import ot
 
 
+def _find_column_index(df, column_spec, param_name):
+    """
+    Find column index by exact name or substring match.
+    
+    Parameters
+    ----------
+    df : pd.DataFrame
+        DataFrame to search in
+    column_spec : str or int
+        Column specification (name, substring, or index)
+    param_name : str
+        Parameter name for error messages
+        
+    Returns
+    -------
+    int
+        Column index
+        
+    Raises
+    ------
+    ValueError
+        If column cannot be uniquely identified
+    """
+    if isinstance(column_spec, int):
+        if column_spec < 0 or column_spec >= len(df.columns):
+            raise ValueError(
+                f"Parameter '{param_name}': column index {column_spec} is out of range. "
+                f"Available columns: {list(df.columns)}"
+            )
+        return column_spec
+    
+    # String specification
+    column_spec_str = str(column_spec)
+    
+    # Try exact match first
+    if column_spec_str in df.columns:
+        return df.columns.get_loc(column_spec_str)
+    
+    # Try substring match
+    matches = [col for col in df.columns if column_spec_str in col]
+    
+    if len(matches) == 0:
+        raise ValueError(
+            f"Parameter '{param_name}': no column found matching '{column_spec_str}'. "
+            f"Available columns: {list(df.columns)}"
+        )
+    elif len(matches) == 1:
+        return df.columns.get_loc(matches[0])
+    else:
+        raise ValueError(
+            f"Parameter '{param_name}': ambiguous column specification '{column_spec_str}'. "
+            f"Multiple matches found: {matches}. "
+            f"Please use a more specific name or exact column name."
+        )
+
+
 def load_distribution(filepath, freq_column="pgen", weights_column="off"):
     """
     Load a TCR distribution from a TSV file.
@@ -17,9 +73,11 @@ def load_distribution(filepath, freq_column="pgen", weights_column="off"):
     filepath : str
         Path to TSV file
     freq_column : str or int
-        Column name or index for frequency values (e.g., 'pgen')
+        Column name, substring of column name, or index for frequency values (e.g., 'pgen').
+        If string: tries exact match first, then substring match (must be unique).
     weights_column : str or int
-        Column name or index for weights, or 'off' for uniform weights
+        Column name, substring, or index for weights, or 'off' for uniform weights.
+        If string: tries exact match first, then substring match (must be unique).
         
     Returns
     -------
@@ -27,18 +85,16 @@ def load_distribution(filepath, freq_column="pgen", weights_column="off"):
         Frequency values (e.g., pgen values)
     weights : np.ndarray
         Weights for each value (uniform if weights_column='off')
+        
+    Raises
+    ------
+    ValueError
+        If column specification is ambiguous or not found
     """
     df = pd.read_csv(filepath, sep='\t')
     
     # Get frequency column
-    if isinstance(freq_column, str):
-        if freq_column in df.columns:
-            freq_idx = df.columns.get_loc(freq_column)
-        else:
-            freq_idx = int(freq_column)
-    else:
-        freq_idx = freq_column
-    
+    freq_idx = _find_column_index(df, freq_column, 'freq_column')
     values = df.iloc[:, freq_idx].values
     
     # Filter positive values
@@ -49,14 +105,7 @@ def load_distribution(filepath, freq_column="pgen", weights_column="off"):
     if weights_column == "off":
         weights = np.ones(len(values)) / len(values)
     else:
-        if isinstance(weights_column, str):
-            if weights_column in df.columns:
-                weight_idx = df.columns.get_loc(weights_column)
-            else:
-                weight_idx = int(weights_column)
-        else:
-            weight_idx = weights_column
-        
+        weight_idx = _find_column_index(df, weights_column, 'weights_column')
         weights = df.iloc[:, weight_idx].values[valid_mask]
         weights = weights / weights.sum()
     

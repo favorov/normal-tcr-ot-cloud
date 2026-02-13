@@ -174,6 +174,10 @@ def main():
                 print(f"  Value range: [{values.min():.3e}, {values.max():.3e}]")
                 print()
         
+        except ValueError as e:
+            # Parameter/validation errors should always be shown
+            print(f"Error: {e}")
+            sys.exit(1)
         except Exception as e:
             if not pipeline_mode:
                 print(f"Error processing {file_path.name}: {e}")
