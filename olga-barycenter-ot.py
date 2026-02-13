@@ -215,8 +215,10 @@ def main():
         distributions_matrix = np.array(discretized_distributions)
         
         # Compute barycenter using POT's barycenter algorithm
-        # Precompute cost matrix (L1 distance, grid already log-spaced)
-        cost_matrix = np.abs(grid.reshape(-1, 1) - grid.reshape(1, -1))
+        # Compute cost matrix using log_l1 metric (consistent with p2p, p2b)
+        # L1 distance in log space for robust handling of extreme pgen ranges
+        log_grid = np.log(grid)
+        cost_matrix = np.abs(log_grid.reshape(-1, 1) - log_grid.reshape(1, -1))
         
         print("Computing Wasserstein barycenter...")
         
