@@ -1,0 +1,208 @@
+#!/usr/bin/env python3
+"""
+Map sample distributions to a barycenter and plot distances.
+Creates a boxplot of distances for normal samples and overlays mapped samples.
+"""
+
+import sys
+import os
+import re
+from pathlib import Path
+import numpy as np
+import matplotlib.pyplot as plt
+from ot_utils import (
+    load_distribution,
+    load_barycenter,
+    compute_wasserstein_distance,
+    discretize_distribution,
+    extend_grid_if_needed
+)
+
+
+def _resolve_barycenter_path(barycenter_folder, barycenter_file):
+    if os.path.isabs(barycenter_file) or barycenter_file.startswith("~"):
+        return Path(os.path.expanduser(barycenter_file))
+    return barycenter_folder / barycenter_file
+
+
+def _label_from_filename(file_path):
+    match = re.match(r"patient(\d+)", file_path.stem, flags=re.IGNORECASE)
+    if match:
+        return f"P{match.group(1)}"
+    return file_path.stem
+
+
+def _compute_distances_to_barycenter(files, grid, barycenter_weights, freq_column, weights_column):
+    distances = []
+    for file_path in files:
+        values, weights = load_distribution(
+            str(file_path),
+            freq_column=freq_column,
+            weights_column=weights_column
+        )
+        extended_grid, extended_barycenter = extend_grid_if_needed(
+            grid, barycenter_weights,
+            values.min(), values.max()
+        )
+        sample_discretized = discretize_distribution(values, weights, extended_grid)
+        distance = compute_wasserstein_distance(
+            extended_grid, sample_discretized,
+            extended_grid, extended_barycenter,
+            metric="log_l1",
+            method="emd"
+        )
+        distances.append(distance)
+    return np.array(distances)
+
+
+def main():
+    """Main function."""
+    if len(sys.argv) < 3 or sys.argv[1] in ["-h", "--help"]:
+        print("Usage: python olga-map-samples-p2b.py <barycenter_folder> <samples_folder> [options]")
+        print("\nParameters:")
+        print("  barycenter_folder     : Folder containing TSV files and barycenter.npz")
+        print("  samples_folder        : Folder with TSV files to map to the barycenter")
+        print("  --freq-column <col>   : Column index or name for frequencies (default: pgen)")
+        print("  --weights-column <col>: Column index or name for weights, or 'off' (default: off)")
+        print("  --barycenter <file>   : Barycenter file (default: barycenter.npz)")
+        print("  --output-plot <file>  : Output plot filename (default: ot-distance-boxplot.png)")
+        print("\nOutput:")
+        print("  Plot saved in samples_folder if filename has no directory component")
+        print("\nExamples:")
+        print("  python olga-map-samples-p2b.py input/test-cloud-Tumeh2014 input/new-samples")
+        print("  python olga-map-samples-p2b.py input/test-cloud-Tumeh2014 input/new-samples \\")
+        print("    --weights-column duplicate_frequency_percent")
+        sys.exit(1 if len(sys.argv) < 3 else 0)
+
+    barycenter_folder = Path(sys.argv[1])
+    samples_folder = Path(sys.argv[2])
+
+    freq_column = "pgen"
+    weights_column = "off"
+    barycenter_file = "barycenter.npz"
+    output_plot = "ot-distance-boxplot.png"
+
+    i = 3
+    while i < len(sys.argv):
+        arg = sys.argv[i]
+        if arg == "--freq-column" and i + 1 < len(sys.argv):
+            freq_column = sys.argv[i + 1]
+            i += 2
+        elif arg == "--weights-column" and i + 1 < len(sys.argv):
+            weights_column = sys.argv[i + 1]
+            i += 2
+        elif arg == "--barycenter" and i + 1 < len(sys.argv):
+            barycenter_file = sys.argv[i + 1]
+            i += 2
+        elif arg == "--output-plot" and i + 1 < len(sys.argv):
+            output_plot = sys.argv[i + 1]
+            i += 2
+        else:
+            print(f"Error: Unknown argument '{arg}'")
+            sys.exit(1)
+
+    try:
+        barycenter_path = _resolve_barycenter_path(barycenter_folder, barycenter_file)
+        if not barycenter_path.exists():
+            print(f"Error: Barycenter file not found: {barycenter_path}")
+            sys.exit(1)
+
+        grid, barycenter_weights = load_barycenter(str(barycenter_path))
+
+        normal_files = sorted(barycenter_folder.glob("*.tsv"))
+        mapped_files = sorted(samples_folder.glob("*.tsv"))
+
+        if len(normal_files) == 0:
+            print(f"Error: No TSV files found in {barycenter_folder}")
+            sys.exit(1)
+        if len(mapped_files) == 0:
+            print(f"Error: No TSV files found in {samples_folder}")
+            sys.exit(1)
+
+        normal_distances = _compute_distances_to_barycenter(
+            normal_files,
+            grid,
+            barycenter_weights,
+            freq_column,
+            weights_column
+        )
+        mapped_distances = _compute_distances_to_barycenter(
+            mapped_files,
+            grid,
+            barycenter_weights,
+            freq_column,
+            weights_column
+        )
+
+        fig, ax = plt.subplots(figsize=(8, 6))
+
+        boxprops = dict(facecolor="#90EE90", color="#0B5D1E")
+        medianprops = dict(color="#000000", linewidth=1.5)
+        whiskerprops = dict(color="#0B5D1E")
+        capprops = dict(color="#0B5D1E")
+
+        ax.boxplot(
+            normal_distances,
+            positions=[1],
+            widths=0.4,
+            patch_artist=True,
+            boxprops=boxprops,
+            medianprops=medianprops,
+            whiskerprops=whiskerprops,
+            capprops=capprops
+        )
+
+        rng = np.random.default_rng(0)
+        jitter = rng.normal(0.0, 0.03, size=len(mapped_distances))
+        ax.scatter(
+            1 + jitter,
+            mapped_distances,
+            color="#F28E2B",
+            edgecolor="#5C3D00",
+            linewidth=0.5,
+            s=35,
+            zorder=3
+        )
+
+        for file_path, distance, offset in zip(mapped_files, mapped_distances, jitter):
+            label = _label_from_filename(file_path)
+            ax.text(
+                1 + offset + 0.01,
+                distance,
+                label,
+                fontsize=8,
+                color="#000000",
+                ha="left",
+                va="center",
+                zorder=4
+            )
+
+        ax.set_xlim(0.5, 1.5)
+        ax.set_xticks([1])
+        ax.set_xticklabels(["Normal vs Mapped"])
+        ax.set_ylabel("Wasserstein distance to barycenter")
+        ax.set_title("Distances to barycenter")
+        ax.grid(axis="y", alpha=0.25)
+
+        # Determine output path: if output_plot has directory component, use it; otherwise save in samples_folder
+        if os.path.isabs(output_plot) or os.path.dirname(output_plot):
+            output_path = Path(os.path.expanduser(output_plot))
+        else:
+            output_path = samples_folder / output_plot
+        
+        fig.tight_layout()
+        fig.savefig(output_path, dpi=150)
+        plt.close(fig)
+
+        print(f"Saved plot to: {output_path}")
+
+    except ValueError as e:
+        print(f"Error: {e}")
+        sys.exit(1)
+    except Exception as e:
+        print(f"Error: {e}")
+        sys.exit(1)
+
+
+if __name__ == "__main__":
+    main()
