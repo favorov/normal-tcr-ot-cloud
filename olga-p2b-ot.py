@@ -26,6 +26,7 @@ def main():
         print("  --barycenter <file>  : Custom barycenter file (default: barycenter.npz)")
         print("  --all                : Explicitly process all files (same as providing no file)")
         print("  --pipeline           : Output only distance value(s) (for use in scripts/pipelines)")
+        print("  --statistics-only    : Enable batch mode and show only statistics")
         print("\nExamples:")
         print("  # Single file")
         print("  python olga-p2b-ot.py input/test-cloud-Tumeh2014 Patient01_Base_tcr_pgen.tsv")
@@ -50,6 +51,7 @@ def main():
     single_file = None
     batch_mode = False
     pipeline_mode = False
+    statistics_only = False
     
     # Parse arguments
     i = 2
@@ -70,6 +72,10 @@ def main():
             i += 1
         elif arg == "--pipeline":
             pipeline_mode = True
+            i += 1
+        elif arg == "--statistics-only":
+            statistics_only = True
+            batch_mode = True
             i += 1
         elif arg.endswith('.tsv') and single_file is None:
             single_file = arg
@@ -182,18 +188,26 @@ def main():
         print("=" * 80)
         print("WASSERSTEIN DISTANCES TO BARYCENTER (sorted by distance)")
         print("=" * 80)
-        print(f"{'File':<45} {'Distance':>15} {'Samples':>10}")
-        print("-" * 80)
         
-        for r in results:
-            print(f"{r['file']:<45} {r['distance']:>15.6e} {r['n_samples']:>10}")
+        if not statistics_only:
+            print(f"{'File':<45} {'Distance':>15} {'Samples':>10}")
+            print("-" * 80)
+            for r in results:
+                print(f"{r['file']:<45} {r['distance']:>15.6e} {r['n_samples']:>10}")
         
         print("=" * 80)
-        print(f"Total files: {len(results)}")
-        print(f"Mean distance: {np.mean([r['distance'] for r in results]):.6e}")
-        print(f"Std distance: {np.std([r['distance'] for r in results]):.6e}")
-        print(f"Min distance: {results[0]['distance']:.6e} ({results[0]['file']})")
-        print(f"Max distance: {results[-1]['distance']:.6e} ({results[-1]['file']})")
+        print("STATISTICS")
+        print("=" * 80)
+        
+        distances = np.array([r['distance'] for r in results])
+        print(f"Count:        {len(distances)}")
+        print(f"Mean:         {np.mean(distances):.6e}")
+        print(f"Median:       {np.median(distances):.6e}")
+        print(f"Std:          {np.std(distances):.6e}")
+        print(f"Min:          {np.min(distances):.6e} ({results[0]['file']})")
+        print(f"Max:          {np.max(distances):.6e} ({results[-1]['file']})")
+        print(f"Q1 (25%):     {np.percentile(distances, 25):.6e}")
+        print(f"Q3 (75%):     {np.percentile(distances, 75):.6e}")
         print("=" * 80)
     else:
         # Single file
