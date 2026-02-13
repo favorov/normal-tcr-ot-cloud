@@ -374,3 +374,191 @@ barycenter = ot.lp.barycenter(distributions_matrix.T, cost_matrix, ...)
 5. ✅ Гибкие режимы вывода
 
 **Проект завершён успешно!**
+
+---
+
+## Расширение функциональности: автоматическое расширение grid (12 февраля 2026, 23:30)
+
+### Мотивация
+
+**Задача:** Нужно вычислять расстояния от распределений до баранцентра, когда эти распределения **не участвовали** в построении баранцентра.
+
+**Проблема:** Если новое распределение выходит за границы grid баранцентра (по min или max значениям), возникает несоответствие support domains.
+
+**Пример:**
+```
+Баранцентр: grid [1.42e-24, 3.54e-06]  # 200 точек
+Новое распределение: [5.0e-25, 1.0e-05]  # выходит за оба края
+```
+
+### Решение: extend_grid_if_needed()
+
+**Реализована новая функция в ot_utils.py:**
+
+```python
+def extend_grid_if_needed(grid, weights, new_data_min, new_data_max):
+    """
+    Extend grid and weights if new data falls outside current range.
+    Maintains logarithmic spacing, preserves original points exactly.
+    New points get zero weight.
+    """
+```
+
+**Ключевые свойства:**
+1. **Сохраняет оригинальную сетку** — все 200 точек остаются на своих местах
+2. **Тот же логарифмический шаг** — новые точки добавляются с тем же интервалом
+3. **Нулевые веса для новых точек** — баранцентр не меняется
+4. **Расширение в обе стороны** — добавляет точки ниже и выше при необходимости
+5. **Идемпотентность** — если расширение не нужно, возвращает оригинал
+
+**Алгоритм:**
+```python
+# 1. Вычислить средний log-шаг из оригинальной сетки
+log_step = mean(diff(log(grid)))
+
+# 2. Добавить точки ниже (если нужно)
+n_below = ceil((log(grid[0]) - log(new_min)) / log_step)
+lower_grid = exp(arange(log(grid[0]) - n*log_step, log(grid[0]), log_step))
+
+# 3. Добавить точки выше (если нужно)
+n_above = ceil((log(new_max) - log(grid[-1])) / log_step)
+upper_grid = exp(arange(log(grid[-1]) + log_step, ..., log_step))
+
+# 4. Объединить: [lower_grid | original_grid | upper_grid]
+extended_grid = concat([lower_grid, grid, upper_grid])
+extended_weights = concat([zeros(n_below), weights, zeros(n_above)])
+```
+
+### Интеграция в скрипты
+
+**olga-p2b-ot.py (Point-to-Barycenter):**
+```python
+# До вычисления расстояния
+values, weights = load_distribution(file_path)
+
+# Автоматически расширяем grid при необходимости
+extended_grid, extended_barycenter = extend_grid_if_needed(
+    grid, barycenter_weights,
+    values.min(), values.max()
+)
+
+# Дискретизация и расчёт на расширенной сетке
+sample_discretized = discretize_distribution(values, weights, extended_grid)
+distance = compute_wasserstein_distance(
+    extended_grid, sample_discretized,
+    extended_grid, extended_barycenter
+)
+```
+
+**olga-p2p-ot.py (Point-to-Point с --use-barycenter-grid):**
+- Single pair: расширяет grid для min/max обоих файлов
+- One-to-all: расширяет для min/max всех сравниваемых файлов
+- All-pairs: расширяет для глобального min/max всех распределений
+
+### Тестирование
+
+**Unit test:**
+```
+Original grid: 200 points [1.000e-20, 1.000e-06]
+Log step: 0.1620
+
+Test: extend to [1e-24, 1e-5]
+Extended grid: 272 points [9.771e-25, 1.136e-05]
+  Points added below: 57
+  Points added above: 15
+  Log step preserved: 0.1620 ✓
+  
+Weights:
+  Sum: 1.000000 ✓
+  Non-zero: 200 (original points) ✓
+  Zero: 72 (new points) ✓
+
+Test: no extension needed [1e-19, 1e-7]
+  Grid unchanged: True ✓
+  Weights unchanged: True ✓
+```
+
+**Integration test (реальные данные):**
+```bash
+# Single file p2b
+python3 olga-p2b-ot.py input/test-cloud-Tumeh2014 Patient01_Base_tcr_pgen.tsv
+# Distance: 0.3837 ✓
+
+# Batch p2b (25 файлов)
+python3 olga-p2b-ot.py input/test-cloud-Tumeh2014 --statistics-only
+# Mean: 1.141, Min: 0.384, Max: 4.453 ✓
+
+# Single pair p2p с barycenter grid
+python3 olga-p2p-ot.py ... --use-barycenter-grid
+# Distance: 0.8350 ✓
+
+# All-pairs p2p с barycenter grid (300 пар)
+python3 olga-p2p-ot.py ... --all --use-barycenter-grid --statistics-only
+# Mean: 1.528, Min: 0.322, Max: 6.045 ✓
+```
+
+### Преимущества
+
+1. **Универсальность:** Можно сравнивать любые распределения, даже если они выходят за границы баранцентра
+2. **Консистентность:** Все сравнения происходят на одной сетке (важно для корректных результатов)
+3. **Автоматизм:** Не требует ручного вмешательства
+4. **Эффективность:** Расширение происходит только при необходимости
+5. **Точность:** Логарифмический шаг сохраняется, оригинальные точки не смещаются
+
+### Use cases
+
+**1. Leave-one-out cross-validation:**
+```bash
+# Построить баранцентр без Patient05
+python3 olga-barycenter-ot.py folder --exclude Patient05_*
+
+# Вычислить расстояние от Patient05 до баранцентра
+# Grid автоматически расширится, если Patient05 выходит за границы
+python3 olga-p2b-ot.py folder Patient05_Base_tcr_pgen.tsv
+```
+
+**2. Новые данные vs референсный баранцентр:**
+```bash
+# Построен баранцентр из cohort A
+python3 olga-barycenter-ot.py cohortA/
+
+# Сравнить новые образцы cohort B с референсом из A
+python3 olga-p2b-ot.py cohortA/ cohortB/Patient_new.tsv
+# Grid расширится автоматически для cohort B
+```
+
+**3. Time series analysis:**
+```bash
+# Baseline баранцентр из timepoint 0
+python3 olga-barycenter-ot.py baseline/
+
+# Отслеживать эволюцию через расстояние до baseline
+for timepoint in t1 t2 t3 t4; do
+    python3 olga-p2b-ot.py baseline/ ${timepoint}/samples.tsv
+done
+```
+
+### Обновлённое состояние проекта
+
+**Новая функциональность:**
+- ✅ `extend_grid_if_needed()` в ot_utils.py
+- ✅ Автоматическое расширение в olga-p2b-ot.py
+- ✅ Автоматическое расширение в olga-p2p-ot.py (с --use-barycenter-grid)
+- ✅ Unit и integration тесты пройдены
+
+**Готовые инструменты (обновлённые):**
+1. ✅ `ot_utils.py` — добавлена функция расширения grid
+2. ✅ `olga-barycenter-ot.py` — без изменений
+3. ✅ `olga-plot-barycenter.py` — без изменений
+4. ✅ `olga-p2p-ot.py` — автоматическое расширение при --use-barycenter-grid
+5. ✅ `olga-p2b-ot.py` — автоматическое расширение для всех режимов
+
+**Итоговая функциональность:**
+- Правильная метрика (log_l1) для экстремальной динамики ✅
+- Математическая консистентность всех компонентов ✅
+- Модульная архитектура с переиспользованием ✅
+- Pipeline-ready для автоматизации ✅
+- Гибкие режимы вывода (normal/pipeline/statistics) ✅
+- **Автоматическое расширение grid для out-of-sample данных** ✅ **NEW!**
+
+**Все задачи завершены!**
