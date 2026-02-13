@@ -11,7 +11,8 @@ from ot_utils import (
     load_distribution,
     load_barycenter,
     compute_wasserstein_distance,
-    discretize_distribution
+    discretize_distribution,
+    extend_grid_if_needed
 )
 
 
@@ -143,13 +144,19 @@ def main():
                 weights_column=weights_column
             )
             
-            # Discretize sample to barycenter grid for fair comparison
-            sample_discretized = discretize_distribution(values, weights, grid)
+            # Extend grid if new data falls outside barycenter range
+            extended_grid, extended_barycenter = extend_grid_if_needed(
+                grid, barycenter_weights,
+                values.min(), values.max()
+            )
+            
+            # Discretize sample to extended grid for fair comparison
+            sample_discretized = discretize_distribution(values, weights, extended_grid)
             
             # Compute distance to barycenter
             distance = compute_wasserstein_distance(
-                grid, sample_discretized,
-                grid, barycenter_weights,
+                extended_grid, sample_discretized,
+                extended_grid, extended_barycenter,
                 metric='log_l1',
                 method='emd'
             )

@@ -244,3 +244,69 @@ def load_barycenter(filepath):
     grid = data['grid']
     barycenter = data['barycenter']
     return grid, barycenter
+
+
+def extend_grid_if_needed(grid, weights, new_data_min, new_data_max):
+    """
+    Extend grid and weights if new data falls outside the current grid range.
+    Maintains logarithmic spacing and preserves original grid points exactly.
+    New points are added with zero weight.
+    
+    This is useful when computing distance from a distribution to a barycenter
+    that was computed without that distribution, and the new distribution
+    extends beyond the original grid range.
+    
+    Parameters
+    ----------
+    grid : np.ndarray
+        Current grid points (log-spaced)
+    weights : np.ndarray
+        Current barycenter weights
+    new_data_min : float
+        Minimum value in new data
+    new_data_max : float
+        Maximum value in new data
+        
+    Returns
+    -------
+    extended_grid : np.ndarray
+        Extended grid (or original if no extension needed)
+    extended_weights : np.ndarray
+        Extended weights (with zeros in new regions)
+    """
+    # Check if extension is needed
+    needs_lower = new_data_min < grid[0]
+    needs_upper = new_data_max > grid[-1]
+    
+    if not needs_lower and not needs_upper:
+        return grid, weights
+    
+    # Calculate the log-spacing step from original grid
+    log_grid = np.log(grid)
+    log_step = np.mean(np.diff(log_grid))
+    
+    # Extend below if needed
+    lower_grid = []
+    lower_weights = []
+    if needs_lower:
+        log_min = np.log(new_data_min)
+        log_first = log_grid[0]
+        n_below = int(np.ceil((log_first - log_min) / log_step))
+        lower_grid = np.exp(np.arange(log_first - n_below * log_step, log_first, log_step))
+        lower_weights = np.zeros(len(lower_grid))
+    
+    # Extend above if needed
+    upper_grid = []
+    upper_weights = []
+    if needs_upper:
+        log_max = np.log(new_data_max)
+        log_last = log_grid[-1]
+        n_above = int(np.ceil((log_max - log_last) / log_step))
+        upper_grid = np.exp(np.arange(log_last + log_step, log_last + (n_above + 1) * log_step, log_step))
+        upper_weights = np.zeros(len(upper_grid))
+    
+    # Combine all parts
+    extended_grid = np.concatenate([lower_grid, grid, upper_grid])
+    extended_weights = np.concatenate([lower_weights, weights, upper_weights])
+    
+    return extended_grid, extended_weights

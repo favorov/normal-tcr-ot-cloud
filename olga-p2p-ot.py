@@ -13,7 +13,8 @@ from ot_utils import (
     compute_wasserstein_distance,
     discretize_distribution,
     create_common_grid,
-    load_barycenter
+    load_barycenter,
+    extend_grid_if_needed
 )
 
 
@@ -30,6 +31,12 @@ def compute_distance_single_pair(input_folder, file1, file2, freq_column, weight
         barycenter_path = Path(input_folder) / "barycenter.npz"
         if barycenter_path.exists():
             grid, _ = load_barycenter(str(barycenter_path))
+            # Extend grid if data falls outside barycenter range
+            all_values = np.concatenate([values1, values2])
+            grid, _ = extend_grid_if_needed(
+                grid, np.zeros(len(grid)),
+                all_values.min(), all_values.max()
+            )
         else:
             grid = create_common_grid([values1, values2], n_grid=n_grid, log_space=True)
     else:
@@ -65,6 +72,14 @@ def compute_distance_one_to_all(input_folder, ref_file, freq_column, weights_col
         barycenter_path = input_path / "barycenter.npz"
         if barycenter_path.exists():
             grid, _ = load_barycenter(str(barycenter_path))
+            # Load all values to determine range for grid extension
+            all_values = [ref_values] + [load_distribution(str(f), freq_column, weights_column)[0] for f in all_files if f.name != ref_file]
+            all_values_combined = np.concatenate(all_values)
+            # Extend grid if data falls outside barycenter range
+            grid, _ = extend_grid_if_needed(
+                grid, np.zeros(len(grid)),
+                all_values_combined.min(), all_values_combined.max()
+            )
         else:
             # Create grid from reference and all other files
             all_values = [ref_values] + [load_distribution(str(f), freq_column, weights_column)[0] for f in all_files if f.name != ref_file]
@@ -122,6 +137,14 @@ def compute_distance_all_pairs(input_folder, freq_column, weights_column, n_grid
         barycenter_path = input_path / "barycenter.npz"
         if barycenter_path.exists():
             grid, _ = load_barycenter(str(barycenter_path))
+            # Find global range from all distributions
+            all_values = [v for v, w in distributions.values()]
+            all_values_combined = np.concatenate(all_values)
+            # Extend grid if data falls outside barycenter range
+            grid, _ = extend_grid_if_needed(
+                grid, np.zeros(len(grid)),
+                all_values_combined.min(), all_values_combined.max()
+            )
         else:
             all_values = [v for v, w in distributions.values()]
             grid = create_common_grid(all_values, n_grid=n_grid, log_space=True)
