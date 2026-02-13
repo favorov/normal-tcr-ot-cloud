@@ -141,253 +141,236 @@ Free-Support:
 9. `SUMMARY.md` - Полная техническая документация
 10. `REFERENCE.md` - Карточка быстрого доступа
 
-### Визуализации
+### Визуализация
 
 **Dual-panel plot (free-support):**
-- **Верхняя панель:** Scatter plot support points на log-шкале
-- **Нижняя панель:** Дискретизированная гистограмма (интуитивнее)
+- Верхняя панель: Scatter plot support points на log-шкале
+- Нижняя панель: Дискретизированная гистограмма (интуитивнее)
 - Фон: 25 индивидуальных распределений (серый)
 - Баrycenter: Красные маркеры
 
-**Comparison plot:**
-- 3×2 grid сравнение
-- Синий = LP grid, Красный = Free-support
-- Cumulative mass, первые N точек, статистика
-- Таблица с метриками
+---
 
-### Выходные файлы
+## Сессия 4: Модульная архитектура (11 февраля 2026)
 
-**В `input/test-cloud-Tumeh2014/`:**
-- `barycenter.npz` (4.0K) - LP grid результат
-- `barycenter_free_support.npz` (4.0K) - Free-support результат
-- `barycenter_plot.png` (228K) - LP визуализация
-- `barycenter_free_support_plot.png` (219K) - Free-support визуализация
-- `barycenter_comparison.png` (219K) - Сравнение методов
+**13:00** - Создание центрального модуля `ot_utils.py`
+
+**Мотивация:**
+- Единый способ вычисления Wasserstein distance
+- Consistency между p2p и p2b
+- Легкость замены библиотеки в будущем
+- DRY принцип
+
+**Созданные функции:**
+- `load_distribution()` — загрузка TCR распределения из TSV
+- `compute_cost_matrix()` — вычисление cost matrix (log_l1, l1, l2)
+- `compute_wasserstein_distance()` — CORE функция (EMD или Sinkhorn)
+- `discretize_distribution()` — дискретизация на сетку
+- `create_common_grid()` — создание log-spaced сетки
+- `load_barycenter()` — загрузка barycenter.npz
+
+**Рефакторинг olga-p2p-ot.py:**
+- Удалены дублирующие функции
+- Использует централизованный compute_wasserstein_distance()
+- **Важно:** Исправлен cost metric на log_l1 (было неправильно!)
+
+**Новый скрипт olga-p2b-ot.py:**
+- Point-to-Barycenter distances
+- Single file / Batch mode
+- Sorted output, статистика
+
+**Тестирование:**
+- Patient01 ↔ Patient02: 0.844
+- Patient23 ближайший к баранцентру: 7.08 (most typical)
+- Patient10 самый далёкий: 12.55 (outlier!)
 
 ---
 
-## Ключевые выводы
+## Сессия 5: Расширение функциональности (12 февраля 2026)
 
-### Математические инсайты
+**11:45** - Добавление pipeline mode и batch обработки
 
-**1. Fixed grid ≠ Optimal for OT**
-- Фиксированная сетка не минимизирует Wasserstein distance
-- Это heuristic, не теоретически оптимальное решение
+**olga-p2p-ot.py:**
+- `--pipeline` флаг: только числа для shell скриптов
+- `--all` флаг: все 300 попарных расстояний
+- `--weights-column` для weighted samples
 
-**2. Free-support is provably optimal**
-- Результат convex optimization
-- min_{X,a} Σᵢ W₂²(αᵢ, δₓ ⊗ a) subject to Σⱼ aⱼ = 1
+**olga-p2b-ot.py:**
+- `--weights-column` для взвешенной дискретизации
+- Batch mode статистика
 
-**3. Outliers need adaptive methods**
-- Экстремальные выбросы (18 порядков величины) требуют адаптивности
-- Fixed grid всегда будет страдать от boundary effects
+**16:00** - Стандартизация вывода
 
-### Практические lessons learned
-
-**1. Sinkhorn > EMD для итеративной оптимизации**
-- Более стабильный численно
-- Regularization (λ=0.01) помогает сходимости
-
-**2. Log-space cost = numerical stability**
-- `cost = |log(x) - log(y)|` вместо `|x - y|`
-- Критично для pgen диапазона [1e-24, 1e-6]
-
-**3. Decreasing learning rate работает**
-- η_t = 0.1/(t+1)
-- Сходится за 50-100 итераций
-
-**4. Визуализация важна**
-- Dual-panel plot помогает интерпретации
-- Bottom panel (histogram) нужна для non-OT экспертов
-
-### Рекомендации для production
-
-✅ **ИСПОЛЬЗОВАТЬ:**
-- Free-support barycenter для публикаций
-- K = sqrt(n_samples) как дефолт
-- Sinkhorn с λ=0.01
-- Dual-panel визуализацию
-
-⚠️ **С ОСТОРОЖНОСТЬЮ:**
-- LP grid для быстрых проверок (но не для финальных результатов)
-- Любые fixed discretization методы с выбросами
-
-❌ **НЕ ИСПОЛЬЗОВАТЬ:**
-- Filtering/trimming данных (теряется информация)
-- EMD для weight optimization (численно нестабильный)
+- Добавлен `--statistics-only` ключ для обоих скриптов
+- Единообразная статистика: Count, Mean, Median, Std, Min, Max, Q1, Q3
+- Быстрый анализ больших матриц без таблиц
 
 ---
 
-## Следующие шаги (опционально)
+## Критическое открытие: метрическая неполадка (12 февраля 2026, 17:00)
 
-### Потенциальные улучшения
+### Проблема
 
-1. **Adaptive regularization для Sinkhorn**
-   - Сейчас: λ=0.01 фиксирована
-   - Идея: Адаптивный выбор λ в зависимости от сходимости
+**Наблюдение:** Min distance к баранцентру (6.86) > Max pairwise distance (6.04)
 
-2. **Uncertainty quantification**
-   - Bootstrap resampling для confidence intervals
-   - Support points stability analysis
+Это **математически невозможно!** Баранцентр должен быть внутри облака точек.
 
-3. **Batch processing**
-   - Обработка нескольких папок одной командой
-   - Parallel computation для ускорения
+### Расследование
 
-4. **Alternative cost metrics**
-   - Помимо L1 в log-space
-   - Попробовать squared cost, entropic regularization variations
+**Первый уровень: несовпадение сеток**
+- olga-p2p-ot.py создавала новую адаптивную сетку для каждой пары
+- olga-p2b-ot.py использовала фиксированную сетку баранцентра
+- **Решение:** добавлен флаг `--use-barycenter-grid` к p2p
 
-5. **Integration с TCR pipeline**
-   - Автоматическая обработка после OLGA
-   - Export в стандартные форматы (JSON, HDF5)
+**Второй уровень: несовпадение дискретизации**
+- olga-p2b-ot.py использовала сырые значения вместо дискретизированных
+- **Решение:** добавлена дискретизация перед расчётом расстояния
 
----
+**ROOT CAUSE: фундаментальная метрическая ошибка!**
 
-## Статус проекта
+### Критическая проблема
 
-**✅ PRODUCTION READY**
+```python
+olga-barycenter-ot.py (НЕПРАВИЛЬНО):
+  cost_matrix = np.abs(grid - grid_T)
+  # L1 метрика в оригинальном пространстве: |pgen_1 - pgen_2|
 
-Все компоненты протестированы и валидированы на реальных TCR данных (25 пациентов, 1834 сэмпла).
-
-**Основное достижение:**
-Полностью устранён артефакт левого хвоста через adaptive support placement в free-support barycenter методе.
-
----
-
-## Продолжение истории чата
-
-_(Новые записи будут добавляться сюда)_
-
-### 11 февраля 2026
-
-**20:23** - Создан этот файл истории чата (`archive/copilot-chat.md`)
-- Цель: Сохранить контекст и продолжать вести документацию
-- Включает всю историю с момента начала работы над проектом
-- Будем обновлять по мере продолжения работы
-
-**12:46** - Проверка существующих скриптов после commit
-- Обнаружили что free-support скрипты отсутствуют (были в другой сессии)
-- Решили продолжать с базовыми: `olga-barycenter-ot.py`, `olga-plot-barycenter.py`, `olga-p2p-ot.py`
-- Протестировали все три — работают корректно ✅
-
-**13:00** - Создание модульной архитектуры (рефакторинг)
-- **Мотивация:** Нужен единый способ вычисления Wasserstein distance
-  - Важно для consistency: p2p и будущий p2b должны использовать одинаковую логику
-  - Легкость замены библиотеки в будущем (централизованная точка изменений)
-  - Принцип DRY (Don't Repeat Yourself)
-
-- **Создан `ot_utils.py`** — общий модуль с функциями:
-  - `load_distribution()` — загрузка TCR распределения из TSV
-  - `compute_cost_matrix()` — вычисление cost matrix (log_l1, l1, l2 metrics)
-  - `compute_wasserstein_distance()` — **CORE функция** для distance (EMD или Sinkhorn)
-  - `discretize_distribution()` — дискретизация на сетку
-  - `create_common_grid()` — создание общей log-spaced сетки
-  - `load_barycenter()` — загрузка баrycenter.npz файла
-
-- **Рефакторинг `olga-p2p-ot.py`:**
-  - Удалены дублирующие функции
-  - Теперь использует `ot_utils.compute_wasserstein_distance()`
-  - **Важное исправление:** cost matrix теперь L1 в log-space (было неправильно!)
-    - Старая версия: `np.abs(grid - grid)` → distance = 4.75e-08
-    - Новая версия: `np.abs(log(grid) - log(grid))` через `metric='log_l1'` → distance = 0.844
-    - Новая версия **корректна** для pgen значений spanning 18 порядков!
-
-- **Создан `olga-p2b-ot.py`** — Point-to-Barycenter distance:
-  - Single file mode: `python olga-p2b-ot.py <folder> <file.tsv>`
-  - **Batch mode:** `python olga-p2b-ot.py <folder> --all` (все файлы сразу)
-  - Сортировка результатов по distance
-  - Статистика: mean, std, min, max
-
-**13:15** - Тестирование нового pipeline
-
-✅ **olga-p2p-ot.py (рефакторенный):**
-- Patient01 ↔ Patient02: distance = 0.844
-- Использует централизованную логику из `ot_utils`
-
-✅ **olga-p2b-ot.py (новый):**
-
-*Single file mode:*
-```
-Patient01 → barycenter: 11.42
+Что нужно (как в p2p и p2b):
+  log_grid = np.log(grid)
+  cost_matrix = np.abs(log_grid - log_grid_T)
+  # log_l1 метрика в логарифмическом пространстве: |log(pgen_1) - log(pgen_2)|
 ```
 
-*Batch mode (25 пациентов):*
+### Почему это критично?
+
+**Данные:** pgen диапазон [1.42e-24, 3.54e-06] — 18 порядков величины!
+
+**L1 в оригинальном пространстве:**
+- Разница между 1e-24 и 1e-23 = 9e-24 ≈ 0 (подавлена!)
+- Разница между 1e-6 и 2e-6 = 1e-6 (доминирует!)
+- **Эффект:** Массы смещаются к верхнему концу диапазона
+
+**log_l1 в логарифмическом пространстве:**
+- Разница между 1e-24 и 1e-23 = |log(1e-24) - log(1e-23)| = 2.3
+- Разница между 1e-6 и 2e-6 = |log(1e-6) - log(2e-6)| = 0.69
+- **Эффект:** Все порядки величины обработаны справедливо
+
+### Исправление
+
+**Файл: olga-barycenter-ot.py (строки ~215)**
+```python
+# Было:
+cost_matrix = np.abs(grid.reshape(-1, 1) - grid.reshape(1, -1))
+
+# Исправлено:
+log_grid = np.log(grid)
+cost_matrix = np.abs(log_grid.reshape(-1, 1) - log_grid.reshape(1, -1))
 ```
-Ближайший: Patient23 = 7.08 (самый "типичный")
-Самый далёкий: Patient10 = 12.55 (экстремальный outlier!)
-Mean: 10.67, Std: 1.03
+
+**Команда пересчёта:**
+```bash
+rm input/test-cloud-Tumeh2014/barycenter.npz && \
+python3 olga-barycenter-ot.py input/test-cloud-Tumeh2014
 ```
 
-**Инсайты из batch анализа:**
-1. Patient10 — самый далёкий, именно у него критический outlier 1.42e-24
-2. Узкое распределение distances (std=1.03) — cohort довольно однороден
-3. Patient23 — наиболее представительный, можно использовать как reference
+### Новый баранцентр (с правильной метрикой)
+
+```
+Grid: 200 точек от 1.421e-24 до 3.541e-06
+Max probability: 4.27e-02
+Entropy: 4.15 (хорошее распределение)
+Median point: 1.664e-09 (логично в центре данных)
+Q1: 5.521e-11
+Q3: 2.140e-08
+Mass below 1e-6: 98.3% ✓
+```
+
+### Верификация: математическая консистентность!
+
+**Попарные расстояния (300 пар, --use-barycenter-grid):**
+```
+Min:     0.322 (Patient04 ↔ Patient07)
+Median:  1.248
+Max:     6.045 (Patient10 ↔ Patient23)
+Mean:    1.528
+```
+
+**Расстояния к баранцентру (25 образцов):**
+```
+Min:     0.387 (Patient04)
+Median:  0.752
+Max:     3.991 (Patient23)
+Mean:    1.001
+```
+
+**Проверка логики:**
+| Метрика | Pairwise | Barycenter | Статус |
+|---------|----------|------------|--------|
+| Min | 0.322 | 0.387 | ✓ min(p2b) > min(p2p) разумно |
+| Median | 1.248 | 0.752 | ✓ баранцентр в центре облака |
+| Max | 6.045 | 3.991 | ✓ max(p2b) < max(p2p) логично |
+| Mean | 1.528 | 1.001 | ✓ баранцентр ближе в среднем |
+
+**Вывод:** ✅ Все формулы теперь математически согласованы!
 
 ---
 
-## Текущее состояние проекта (11 февраля, 13:15)
+## Итоговая архитектура (12 февраля 2026, 17:15)
 
-**Рабочие скрипты:**
-1. ✅ `olga-barycenter-ot.py` — вычисление LP grid barycenter
-2. ✅ `olga-plot-barycenter.py` — визуализация barycenter
-3. ✅ `olga-p2p-ot.py` — попарное сравнение (рефакторен, использует `ot_utils`)
-4. ✅ `olga-p2b-ot.py` — distance до барицентра (новый, batch mode!)
-5. ✅ `ot_utils.py` — общий модуль для OT операций
+### Все компоненты используют log_l1 метрику
 
-**Архитектурные улучшения:**
-- Централизованная логика вычисления distance
-- Правильный cost metric (log_l1) для pgen
-- Модульная структура для переиспользования
-- Готовность к замене библиотеки
+**1. ot_utils.py:**
+```python
+log_l1 = np.abs(np.log(cost_grid) - np.log(cost_grid_T))
+```
 
-**Следующие возможные шаги:**
-- Визуализация ranking (barplot расстояний)
-- Статистический анализ отклонений
-- Bootstrap confidence intervals для distances
-- Integration тестирование всех компонентов
+**2. olga-barycenter-ot.py (FIXED):**
+```python
+log_grid = np.log(grid)
+cost_matrix = np.abs(log_grid - log_grid_T)
+barycenter = ot.lp.barycenter(distributions_matrix.T, cost_matrix, ...)
+```
 
----
+**3. olga-p2p-ot.py & olga-p2b-ot.py:**
+- Используют ot_utils.compute_wasserstein_distance()
+- Автоматически используют log_l1 метрику
 
-## Сессия 3: Расширение функциональности (12 февраля 2026)
+### Готовые инструменты
 
-### Стандартизация статистики и новый режим --statistics-only
+1. ✅ `ot_utils.py` — центральный модуль с правильной метрикой
+2. ✅ `olga-barycenter-ot.py` — LP grid баранцентр (200 точек, log_l1)
+3. ✅ `olga-plot-barycenter.py` — визуализация баранцентра
+4. ✅ `olga-p2p-ot.py` — попарные расстояния (3 режима, 3 варианта вывода)
+5. ✅ `olga-p2b-ot.py` — расстояние к баранцентру (2 режима, 3 варианта вывода)
 
-**Реализовано:**
-- Добавлена идентичная статистика в olga-p2b-ot.py для batch mode
-- Новый ключ --statistics-only для быстрого анализа без таблиц
-- Выводит только статистику для больших матриц
+### Функциональность
 
-**Тестирование --statistics-only:**
-✅ olga-p2p-ot.py --statistics-only (all-pairs)
-✅ olga-p2p-ot.py file.tsv --statistics-only (one-to-all)
-✅ olga-p2b-ot.py --statistics-only (batch)
+**olga-p2p-ot.py — 3 режима сравнения:**
+- Single pair: `file1.tsv file2.tsv`
+- One-to-all: `file1.tsv --all`
+- All-pairs: `--all` (300 расстояний)
 
-**Полная функциональность инструментов:**
+**olga-p2p-ot.py — 3 варианта вывода:**
+- Normal: полная таблица + статистика
+- `--pipeline`: только числа для shell
+- `--statistics-only`: только статистика
 
-olga-p2p-ot.py:
-- Single pair / One-to-all / All-pairs режимы
-- Output: --pipeline / normal (table+stats) / --statistics-only
+**olga-p2p-ot.py — специальные флаги:**
+- `--use-barycenter-grid`: использовать сетку баранцентра
+- `--weights-column`: взвешенные образцы
 
-olga-p2b-ot.py:
-- Single file / Batch режимы
-- Поддерживает weighted columns (--weights-column)
-- Output: --pipeline / normal (table+stats) / --statistics-only
+**olga-p2b-ot.py:**
+- Single / Batch mode
+- Sorted output по расстоянию
+- Pipeline / Normal / Statistics-only output
+- Weighted samples support
 
----
+### Достигнутые цели
 
-## Финальное состояние проекта (12 февраля 2026)
+1. ✅ Правильная обработка экстремальной динамики (18 порядков)
+2. ✅ Математическая консистентность между всеми методами
+3. ✅ Модульная архитектура (DRY, переиспользование)
+4. ✅ Pipeline-ready для автоматизации
+5. ✅ Гибкие режимы вывода
 
-**Полный набор готовых инструментов:**
-✅ ot_utils.py - центральный модуль OT операций
-✅ olga-barycenter-ot.py - LP grid barycenter (200 точек)
-✅ olga-plot-barycenter.py - визуализация баранцентра
-✅ olga-p2p-ot.py - попарные distances (3 режима, 3 варианта вывода)
-✅ olga-p2b-ot.py - distance to barycenter (2 режима, 3 варианта вывода)
-
-**Архитектурные достижения:**
-- Модульная структура с полным DRY принципом
-- Правильная числовая обработка (log_l1 для экстремальной динамики pgen)
-- Pipeline-ready для интеграции в shell скрипты
-- Гибкие режимы вывода (полная таблица, статистика, числа)
-- Полная документированная история разработки
+**Проект завершён успешно!**
