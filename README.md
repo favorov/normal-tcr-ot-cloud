@@ -7,7 +7,7 @@ A toolkit for analyzing TCR distributions using Wasserstein Optimal Transport.
 ```bash
 python3 -m venv .venv
 source .venv/bin/activate
-pip install numpy pandas pot matplotlib
+pip install numpy pandas pot matplotlib scikit-learn
 ```
 
 ## Architecture
@@ -22,7 +22,9 @@ pip install numpy pandas pot matplotlib
 2. `olga-plot-barycenter.py` — visualize barycenter
 3. `olga-p2p-ot.py` — pairwise distances between distributions
 4. `olga-p2b-ot.py` — distances from distributions to barycenter
-5. `olga-map-samples-p2b.py` — map samples to barycenter with visualization
+5. `olga-boxplot-samples-ot-2pb.py` — compare sample distances with boxplot
+6. `olga-mds-plot-samples.py` — MDS visualization of samples vs barycenter
+7. `olga-samples-p2b-pval.py` — statistical significance of sample distances
 
 ---
 
@@ -201,14 +203,14 @@ python3 olga-p2b-ot.py input/test-cloud-Tumeh2014 \
 
 ---
 
-## olga-map-samples-p2b.py
+## olga-boxplot-samples-ot-2pb.py
 
-Maps sample distributions to a barycenter and creates a comparison visualization.
+Compares distances from two sample sets to a barycenter using a boxplot.
 
 ### Usage
 
 ```bash
-python3 olga-map-samples-p2b.py <barycenter_folder> <samples_folder> [options]
+python3 olga-boxplot-samples-ot-2pb.py <barycenter_folder> <samples_folder> [options]
 ```
 
 ### Parameters
@@ -218,17 +220,122 @@ python3 olga-map-samples-p2b.py <barycenter_folder> <samples_folder> [options]
 - `--freq-column <col>` — default: pgen
 - `--weights-column <col>` — default: off
 - `--barycenter <file>` — barycenter file (default: barycenter.npz)
+- `--output-plot <file>` — output plot filename (default: ot-distance-boxplot.png)
 
 ### Examples
 
 ```bash
-python3 olga-map-samples-p2b.py input/test-cloud-Tumeh2014 input/new-samples
+python3 olga-boxplot-samples-ot-2pb.py input/test-cloud-Tumeh2014 input/new-samples
 
-python3 olga-map-samples-p2b.py input/test-cloud-Tumeh2014 input/new-samples \
+python3 olga-boxplot-samples-ot-2pb.py input/test-cloud-Tumeh2014 input/new-samples \
+    --weights-column duplicate_frequency_percent --output-plot comparison.png
+```
+
+**Output:** Boxplot with light green box (normal sample distances) and orange points (mapped sample distances with labels like P01, P02, etc.).
+
+---
+
+## olga-mds-plot-samples.py
+
+Creates an MDS visualization showing relationships between samples and a barycenter.
+
+### Usage
+
+```bash
+python3 olga-mds-plot-samples.py <barycenter_folder> <samples_folder> [options]
+```
+
+### Parameters
+
+- `barycenter_folder` — folder with TSV files and barycenter.npz
+- `samples_folder` — folder with samples to map
+- `--freq-column <col>` — default: pgen
+- `--weights-column <col>` — default: off
+- `--barycenter <file>` — barycenter file (default: barycenter.npz)
+- `--output-plot <file>` — output plot filename (default: ot-mds-plot.png)
+
+### How it works
+
+1. Loads all samples from barycenter folder and samples folder
+2. Computes all pairwise Wasserstein distances
+3. Adds barycenter as a central point (distance to itself = 0)
+4. Applies MDS algorithm to reduce distances to 2D space
+5. Visualizes with light green points for normal samples, orange for mapped samples, and a green star for barycenter
+
+### Examples
+
+```bash
+python3 olga-mds-plot-samples.py input/test-cloud-Tumeh2014 input/new-samples
+
+python3 olga-mds-plot-samples.py input/test-cloud-Tumeh2014 input/new-samples \
+    --weights-column duplicate_frequency_percent --output-plot mds_analysis.png
+```
+
+**Output:** 2D MDS plot showing spatial relationships. Light green points = normal samples, orange points = mapped samples (labeled P01, P02, etc.), 8-pointed green star = barycenter.
+
+---
+
+## olga-samples-p2b-pval.py
+
+Computes p-values for samples based on their distance to a barycenter.
+
+### Usage
+
+```bash
+python3 olga-samples-p2b-pval.py <barycenter_folder> <samples_folder> [options]
+```
+
+### Parameters
+
+- `barycenter_folder` — folder with TSV files and barycenter.npz
+- `samples_folder` — folder with samples to evaluate
+- `--freq-column <col>` — default: pgen
+- `--weights-column <col>` — default: off
+- `--barycenter <file>` — barycenter file (default: barycenter.npz)
+
+### How it works
+
+1. Loads all normal samples from barycenter folder
+2. Computes distances to barycenter and fits null hypothesis model
+3. Currently uses: Normal distribution fitted to normal sample distances
+4. For each test sample, computes distance to barycenter
+5. Calculates p-value: probability of observing this distance under null hypothesis
+6. Displays results sorted by p-value (most significant first)
+
+### Output format
+
+Tabular results with three columns:
+- `Sample` — filename of the test sample
+- `Distance` — Wasserstein distance to barycenter
+- `P-value` — raw two-tailed p-value (before correction)
+- `Bonf. p` — Bonferroni-adjusted p-value (for significance assessment)
+
+Summary statistics:
+- Raw and adjusted p-value ranges
+- Count of significant samples at different thresholds
+- Number of tests used for Bonferroni correction
+
+### Examples
+
+```bash
+python3 olga-samples-p2b-pval.py input/test-cloud-Tumeh2014 input/new-samples
+
+python3 olga-samples-p2b-pval.py input/test-cloud-Tumeh2014 input/new-samples \
     --weights-column duplicate_frequency_percent
 ```
 
-**Output:** `distances-boxplot.png` — boxplot of normal sample distances (light green) with mapped sample distances (orange points with labels).
+### Notes on the statistical model and multiple testing correction
+
+The current implementation uses a normal distribution fitted to distances from normal samples. This is a **temporary statistical model** that can be easily replaced.
+
+For multiple testing correction, the script uses **Bonferroni adjustment**: each p-value is multiplied by the number of tests. This controls **Family-Wise Error Rate (FWER)** — the probability of making any false discovery. It's conservative but safe for exploratory analyses.
+
+To try alternative models or corrections:
+- Different null hypothesis models: Beta, Gamma, Kernel Density Estimation
+- Alternative multiple testing corrections: Benjamini-Hochberg (FDR), permutation-based p-values
+- More advanced statistical approaches
+
+The model and correction method encapsulation makes it straightforward to test different statistical assumptions.
 
 ---
 
