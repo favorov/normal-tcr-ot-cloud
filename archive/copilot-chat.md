@@ -5,6 +5,127 @@
 
 ---
 
+## Сессия 6: Новый скрипт для картирования сэмплов (13 февраля 2026)
+
+### Новые возможности
+
+**Запрос пользователя:** "Это будет новый скрипт, ключи - фолдер с файлами и барицентром, фолдер c сэмплами, которые надо картировать по отношению к барицентру, и ключи колонок с теми же умолчаниями. Считаем расстояния от всех файлов до барицентра, рисуем распределение boxplot для тех файлов, для которых построен барицентром, тёмно-зелёным (это нормальные сэмплы) и туда же оранжевыми точками - расстояния от сэмплов, которые мы картируем, до барицентра."
+
+#### Создание olga-boxplot-samples-ot-2pb.py
+
+**Назначение:** Визуализация расстояний до баранцентра с отличием между нормальными сэмплами (построившими баранцентр) и картируемыми сэмплами.
+
+**Основные параметры:**
+```bash
+python3 olga-boxplot-samples-ot-2pb.py <barycenter_folder> <samples_folder> [options]
+```
+
+**Параметры:**
+- `--freq-column <col>` — default: pgen
+- `--weights-column <col>` — default: off
+- `--barycenter <file>` — default: barycenter.npz
+- `--output-plot <file>` — имя выходного файла (default: ot-distance-boxplot.png)
+
+**Логика работы:**
+1. Загружает баранцентр из `barycenter_folder`
+2. Вычисляет расстояния всех файлов в `barycenter_folder` до баранцентра (нормальные сэмплы)
+3. Вычисляет расстояния всех файлов в `samples_folder` до баранцентра (картируемые сэмплы)
+4. Рисует boxplot:
+   - Светло-зелёный боксплот (light green #90EE90) для нормальных сэмплов
+   - Оранжевые точки (#F28E2B) для картируемых сэмплов с метками вида "PNN"
+
+**Visual design:**
+- Боксплот с тёмно-зелёным обводом (#0B5D1E)
+- Белая медиана (заменена на чёрную для контраста)
+- Оранжевые точки с чёрными метками (извлекаются номера из имён файлов PatientNN → PNN)
+- Небольшое дрожание (jitter) по X для видимости перекрывающихся точек
+
+**Примеры использования:**
+```bash
+# Базовый вариант
+python3 olga-boxplot-samples-ot-2pb.py input/test-cloud-Tumeh2014 input/samples_to_map
+
+# С весами
+python3 olga-boxplot-samples-ot-2pb.py input/test-cloud-Tumeh2014 input/samples_to_map \
+    --weights-column duplicate_frequency_percent
+
+# С кастомным файлом выходной картинки (сохраняется в samples_to_map)
+python3 olga-boxplot-samples-ot-2bp.py input/test-cloud-Tumeh2014 input/samples_to_map \
+    --output-plot my_distances.png
+
+# С полным путём
+python3 olga-boxplot-samples-ot-2pb.py input/test-cloud-Tumeh2014 input/samples_to_map \
+    --output-plot ~/results/comparison.png
+```
+
+#### Параметр --output-plot
+
+**Добавлено:** Гибкое управление путём сохранения графика
+
+**Логика:**
+- Если `--output-plot` — просто имя файла (нет `/`) → сохраняется в `samples_folder`
+- Если имеет путь (содержит `/`) или абсолютный → используется как есть (с expand `~`)
+- Default: `ot-distance-boxplot.png` (сохраняется в `samples_folder`)
+
+**Примеры:**
+```bash
+# Сохраняется в input/samples_to_map/ot-distance-boxplot.png
+python3 olga-boxplot-samples-ot-2pb.py input/test-cloud-Tumeh2014 input/samples_to_map
+
+# Сохраняется в input/samples_to_map/comparison.png
+python3 olga-boxplot-samples-ot-2pb.py input/test-cloud-Tumeh2014 input/samples_to_map \
+    --output-plot comparison.png
+
+# Сохраняется в ~/results/plot.png
+python3 olga-boxplot-samples-ot-2pb.py input/test-cloud-Tumeh2014 input/samples_to_map \
+    --output-plot ~/results/plot.png
+```
+
+### Перевод README на английский
+
+**Запрос:** "Давай переведём README обратно на английский. Мне удобнее общаться по-русски, но README нужен пользователям пакета."
+
+**Действия:**
+- Переведены все секции README.md с русского на английский (385 строк)
+- Обновлены все примеры и описания параметров
+- Структура документа полностью сохранена
+- Результат: Англоязычный README для пользователей пакета
+
+**Содержание README (English):**
+- Installation guide
+- Architecture overview (5 scripts)
+- Detailed documentation for each script
+- Three modes of olga-p2p-ot.py
+- Smart column finding guide
+- Typical workflows (4 scenarios)
+- Technical details (metric, grid extension, data structure)
+- Links to additional documentation
+
+### Файлы, изменённые в сессии
+
+1. **olga-boxplot-samples-ot-2pb.py** (новый скрипт)
+   - Вычисление расстояний для двух наборов сэмплов
+   - Визуализация с боксплотом и оранжевыми точками
+   - Параметр --output-plot для управления выходом
+
+2. **README.md** (полный перевод на английский)
+   - Переведены все параметры, примеры, workflows
+   - Добавлена документация для нового скрипта
+   - Обновлены ссылки на документацию
+
+### Совместимость
+
+**Новый скрипт использует:**
+- `ot_utils.load_distribution()` — загрузка распределений
+- `ot_utils.load_barycenter()` — загрузка баранцентра
+- `ot_utils.discretize_distribution()` — дискретизация
+- `ot_utils.compute_wasserstein_distance()` — вычисление расстояний
+- `ot_utils.extend_grid_if_needed()` — расширение сетки для out-of-sample данных
+
+**Полная интеграция с существующей инфраструктурой.**
+
+---
+
 ## Сессия 5: Унификация параметра --barycenter (11 февраля 2026)
 
 ### Проблема
