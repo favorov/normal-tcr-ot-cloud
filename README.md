@@ -79,7 +79,7 @@ python3 olga-plot-barycenter.py <input_folder> [options]
 - `--barycenter <file>` — path to barycenter (default: barycenter.npz in input_folder)
 - `--freq-column <col>` — default: pgen
 - `--weights-column <col>` — default: off
-- `--output <file>` — output image path (default: input_folder/barycenter_plot.png)
+- `--output-plot <file>` — output image path (default: barycenter_plot.png in input_folder)
 
 ### Examples
 

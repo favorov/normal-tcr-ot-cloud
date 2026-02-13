@@ -113,6 +113,33 @@ python3 olga-boxplot-samples-ot-2pb.py input/test-cloud-Tumeh2014 input/samples_
    - Добавлена документация для нового скрипта
    - Обновлены ссылки на документацию
 
+### Добавление --output-plot в olga-plot-barycenter.py
+
+**Запрос:** "Давай добавим такой же ключ --output-plot в olga-plot-barycenter.py"
+
+**Цель:** Обеспечить консистентность интерфейсов для обоих скриптов визуализации.
+
+**Действия:**
+- Добавлен параметр `--output-plot <file>` в `olga-plot-barycenter.py`
+- Default: `barycenter_plot.png` (сохраняется в `input_folder`)
+- Та же логика обработки путей:
+  - Относительный путь (без `/`) → сохраняется в `input_folder`
+  - Абсолютный путь или с путём → используется как есть
+
+**Примеры:**
+```bash
+# Default: сохраняется в input/test-cloud-Tumeh2014/barycenter_plot.png
+python3 olga-plot-barycenter.py input/test-cloud-Tumeh2014
+
+# Кастомное имя: input/test-cloud-Tumeh2014/my_plot.png
+python3 olga-plot-barycenter.py input/test-cloud-Tumeh2014 --output-plot my_plot.png
+
+# Полный путь: ~/results/barycenter.png
+python3 olga-plot-barycenter.py input/test-cloud-Tumeh2014 --output-plot ~/results/barycenter.png
+```
+
+**Результат:** Оба скрипта визуализации (`olga-plot-barycenter.py` и `olga-boxplot-samples-ot-2pb.py`) теперь имеют единообразный интерфейс для управления выходными файлами.
+
 ### Совместимость
 
 **Новый скрипт использует:**
