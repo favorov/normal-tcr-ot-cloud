@@ -1,8 +1,8 @@
 # TCR Optimal Transport Analysis
 
-Набор инструментов для анализа TCR распределений с использованием Wasserstein Optimal Transport.
+A toolkit for analyzing TCR distributions using Wasserstein Optimal Transport.
 
-## Установка
+## Installation
 
 ```bash
 python3 -m venv .venv
@@ -10,180 +10,181 @@ source .venv/bin/activate
 pip install numpy pandas pot matplotlib
 ```
 
-## Архитектура
+## Architecture
 
-**Центральный модуль:** `ot_utils.py` — общие функции для всех скриптов
-- Единая метрика: log_l1 (для данных spanning 18 порядков величины)
-- Автоматическое расширение grid для out-of-sample данных
-- Умный поиск колонок (exact match → substring match)
+**Core module:** `ot_utils.py` — shared utilities for all scripts
+- Single metric: log_l1 (for data spanning 18 orders of magnitude)
+- Automatic grid extension for out-of-sample data
+- Smart column finding (exact match → substring match)
 
-**Скрипты:**
-1. `olga-barycenter-ot.py` — вычисление Wasserstein баранцентра
-2. `olga-plot-barycenter.py` — визуализация баранцентра
-3. `olga-p2p-ot.py` — попарные расстояния между распределениями
-4. `olga-p2b-ot.py` — расстояния от распределений до баранцентра
+**Scripts:**
+1. `olga-barycenter-ot.py` — compute Wasserstein barycenter
+2. `olga-plot-barycenter.py` — visualize barycenter
+3. `olga-p2p-ot.py` — pairwise distances between distributions
+4. `olga-p2b-ot.py` — distances from distributions to barycenter
+5. `olga-map-samples-p2b.py` — map samples to barycenter with visualization
 
 ---
 
 ## olga-barycenter-ot.py
 
-Вычисляет Wasserstein баранцентр из всех TSV файлов в папке.
+Computes the Wasserstein barycenter from all TSV files in a folder.
 
-### Использование
+### Usage
 
 ```bash
 python3 olga-barycenter-ot.py <input_folder> [options]
 ```
 
-### Параметры
+### Parameters
 
-- `--freq-column <col>` — колонка с частотами (default: pgen)
-- `--weights-column <col>` — колонка с весами или 'off' (default: off)
-- `--n-grid <n>` — количество точек сетки (default: 200)
-- `--barycenter <file>` — имя файла для сохранения баранцентра (default: barycenter.npz)
+- `--freq-column <col>` — frequencies column (default: pgen)
+- `--weights-column <col>` — weights column or 'off' (default: off)
+- `--n-grid <n>` — number of grid points (default: 200)
+- `--barycenter <file>` — output filename for barycenter (default: barycenter.npz)
 
-### Примеры
+### Examples
 
 ```bash
-# Базовый вариант
+# Basic usage
 python3 olga-barycenter-ot.py input/test-cloud-Tumeh2014
 
-# С весами
+# With weights
 python3 olga-barycenter-ot.py input/test-cloud-Tumeh2014 \
     --weights-column duplicate_frequency_percent
 
-# С кастомной сеткой
+# Custom grid size
 python3 olga-barycenter-ot.py input/test-cloud-Tumeh2014 --n-grid 500
 
-# Сохранить в другой файл
+# Save to custom file
 python3 olga-barycenter-ot.py input/test-cloud-Tumeh2014 --barycenter my_barycenter.npz
 ```
 
-**Выход:** Создаёт файл с grid и весами баранцентра (по умолчанию `input_folder/barycenter.npz`).
+**Output:** Creates a file with barycenter grid points and weights (default: `input_folder/barycenter.npz`).
 
 ---
 
 ## olga-plot-barycenter.py
 
-Создаёт визуализацию баранцентра с индивидуальными распределениями.
+Creates a visualization of the barycenter with individual distributions.
 
-### Использование
+### Usage
 
 ```bash
 python3 olga-plot-barycenter.py <input_folder> [options]
 ```
 
-### Параметры
+### Parameters
 
-- `--barycenter <file>` — путь к баранцентру (default: barycenter.npz в input_folder)
+- `--barycenter <file>` — path to barycenter (default: barycenter.npz in input_folder)
 - `--freq-column <col>` — default: pgen
 - `--weights-column <col>` — default: off
-- `--output <file>` — путь к выходному файлу (default: input_folder/barycenter_plot.png)
+- `--output <file>` — output image path (default: input_folder/barycenter_plot.png)
 
-### Пример
+### Examples
 
 ```bash
 python3 olga-plot-barycenter.py input/test-cloud-Tumeh2014 \
     --weights-column duplicate_frequency_percent
 
-# С кастомным баранцентром
+# With custom barycenter
 python3 olga-plot-barycenter.py input/test-cloud-Tumeh2014 \
     --barycenter ~/data/my_barycenter.npz
 ```
 
-**Выход:** PNG файл с графиком баранцентра и всех распределений.
+**Output:** PNG image with barycenter and all individual distributions.
 
 ---
 
 ## olga-p2p-ot.py
 
-Вычисляет Wasserstein расстояния между распределениями.
+Computes Wasserstein distances between distributions.
 
-### Три режима работы
+### Three modes of operation
 
-**1. Single pair — расстояние между двумя файлами**
+**1. Single pair — distance between two files**
 ```bash
 python3 olga-p2p-ot.py <input_folder> <file1.tsv> <file2.tsv>
 ```
 
-**2. One-to-all — от одного файла ко всем остальным**
+**2. One-to-all — from one file to all others**
 ```bash
 python3 olga-p2p-ot.py <input_folder> <file1.tsv> --all
 ```
 
-**3. All-pairs — все попарные расстояния (верхний треугольник матрицы)**
+**3. All-pairs — all pairwise distances (upper triangle)**
 ```bash
 python3 olga-p2p-ot.py <input_folder> --all
 ```
 
-### Параметры
+### Parameters
 
 - `--freq-column <col>` — default: pgen
 - `--weights-column <col>` — default: off
-- `--n-grid <n>` — количество точек сетки (default: 200)
-- `--barycenter <file>` — использовать сетку из баранцентра (default: barycenter.npz)
-- `--pipeline` — вывод только чисел (для скриптов)
-- `--statistics-only` — только статистика (без таблиц)
+- `--n-grid <n>` — number of grid points (default: 200)
+- `--barycenter <file>` — use barycenter grid (default: barycenter.npz)
+- `--pipeline` — output only numbers (for scripts)
+- `--statistics-only` — show only statistics (no table)
 
-### Примеры
+### Examples
 
 ```bash
 # Single pair
 python3 olga-p2p-ot.py input/test-cloud-Tumeh2014 \
     Patient01_Base_tcr_pgen.tsv Patient02_Base_tcr_pgen.tsv
 
-# One-to-all с весами
+# One-to-all with weights
 python3 olga-p2p-ot.py input/test-cloud-Tumeh2014 \
     Patient01_Base_tcr_pgen.tsv --all \
     --weights-column duplicate_frequency_percent
 
-# All-pairs с barycenter grid (для согласованности с p2b)
+# All-pairs with barycenter grid (for consistency with p2b)
 python3 olga-p2p-ot.py input/test-cloud-Tumeh2014 \
     --all --barycenter barycenter.npz --statistics-only
 
-# Pipeline mode (только числа)
+# Pipeline mode (numbers only)
 python3 olga-p2p-ot.py input/test-cloud-Tumeh2014 \
     Patient01_Base_tcr_pgen.tsv Patient02_Base_tcr_pgen.tsv --pipeline
 ```
 
-**Выход:**
-- Normal: таблица + статистика
-- `--pipeline`: только числа (одно на строку)
+**Output:**
+- Normal: table + statistics
+- `--pipeline`: numbers only (one per line)
 - `--statistics-only`: Count, Mean, Median, Std, Min, Max, Q1, Q3
 
 ---
 
 ## olga-p2b-ot.py
 
-Вычисляет Wasserstein расстояния от распределений до баранцентра.
+Computes Wasserstein distances from distributions to the barycenter.
 
-### Использование
+### Usage
 
 ```bash
 # Single file
 python3 olga-p2b-ot.py <input_folder> <file.tsv> [options]
 
-# Batch mode (все файлы)
+# Batch mode (all files)
 python3 olga-p2b-ot.py <input_folder> [--all] [options]
 ```
 
-### Параметры
+### Parameters
 
 - `--freq-column <col>` — default: pgen
 - `--weights-column <col>` — default: off
-- `--barycenter <file>` — путь к баранцентру (default: barycenter.npz)
-- `--all` — обработать все TSV файлы
-- `--pipeline` — вывод только чисел
-- `--statistics-only` — только статистика
+- `--barycenter <file>` — path to barycenter (default: barycenter.npz)
+- `--all` — process all TSV files
+- `--pipeline` — output numbers only
+- `--statistics-only` — show statistics only
 
-### Примеры
+### Examples
 
 ```bash
 # Single file
 python3 olga-p2b-ot.py input/test-cloud-Tumeh2014 \
     Patient01_Base_tcr_pgen.tsv
 
-# Batch mode с весами
+# Batch mode with weights
 python3 olga-p2b-ot.py input/test-cloud-Tumeh2014 \
     --weights-column duplicate_frequency_percent --statistics-only
 
@@ -192,45 +193,76 @@ python3 olga-p2b-ot.py input/test-cloud-Tumeh2014 \
     Patient01_Base_tcr_pgen.tsv --pipeline
 ```
 
-**Выход:**
-- Single file: расстояние + детальная информация
-- Batch mode: таблица отсортированная по расстоянию + статистика
-- `--pipeline`: только числа
-- `--statistics-only`: только статистика
+**Output:**
+- Single file: distance + detailed info
+- Batch mode: table sorted by distance + statistics
+- `--pipeline`: numbers only
+- `--statistics-only`: statistics only
 
 ---
 
-## Умный поиск колонок
+## olga-map-samples-p2b.py
 
-Все скрипты поддерживают гибкое указание колонок:
+Maps sample distributions to a barycenter and creates a comparison visualization.
 
-**1. Точное имя:**
+### Usage
+
+```bash
+python3 olga-map-samples-p2b.py <barycenter_folder> <samples_folder> [options]
+```
+
+### Parameters
+
+- `barycenter_folder` — folder with TSV files and barycenter.npz
+- `samples_folder` — folder with samples to map
+- `--freq-column <col>` — default: pgen
+- `--weights-column <col>` — default: off
+- `--barycenter <file>` — barycenter file (default: barycenter.npz)
+
+### Examples
+
+```bash
+python3 olga-map-samples-p2b.py input/test-cloud-Tumeh2014 input/new-samples
+
+python3 olga-map-samples-p2b.py input/test-cloud-Tumeh2014 input/new-samples \
+    --weights-column duplicate_frequency_percent
+```
+
+**Output:** `distances-boxplot.png` — boxplot of normal sample distances (light green) with mapped sample distances (orange points with labels).
+
+---
+
+## Smart Column Finding
+
+All scripts support flexible column specification:
+
+**1. Exact name:**
 ```bash
 --freq-column pgen
 --weights-column duplicate_frequency_percent
 ```
 
-**2. Подстрока (если уникальна):**
+**2. Substring (if unique):**
 ```bash
---weights-column duplicate_frequency_p   # найдёт duplicate_frequency_percent
---weights-column frequency_percent       # найдёт duplicate_frequency_percent
---weights-column count                   # найдёт duplicate_count
+--weights-column duplicate_frequency_p   # finds duplicate_frequency_percent
+--weights-column frequency_percent       # finds duplicate_frequency_percent
+--weights-column count                   # finds duplicate_count
 ```
 
-**3. Индекс колонки:**
+**3. Column index:**
 ```bash
---freq-column 22       # 22-я колонка (pgen)
---weights-column 18    # 18-я колонка
+--freq-column 22       # column 22 (pgen)
+--weights-column 18    # column 18
 ```
 
-**Диагностика:**
+**Diagnostics:**
 ```bash
-# Неоднозначная подстрока
+# Ambiguous substring
 --weights-column duplicate
 # Error: ambiguous column specification 'duplicate'
 #        Multiple matches: ['duplicate_count', 'duplicate_frequency_percent']
 
-# Несуществующая колонка
+# Non-existent column
 --freq-column xyz
 # Error: no column found matching 'xyz'
 #        Available columns: [...]
@@ -238,28 +270,28 @@ python3 olga-p2b-ot.py input/test-cloud-Tumeh2014 \
 
 ---
 
-## Типичные workflow
+## Typical Workflows
 
-### 1. Построение баранцентра и анализ
+### 1. Compute barycenter and analyze
 
 ```bash
-# Шаг 1: Вычислить баранцентр
+# Step 1: Compute barycenter
 python3 olga-barycenter-ot.py input/test-cloud-Tumeh2014 \
     --weights-column duplicate_frequency_percent
 
-# Шаг 2: Визуализировать
+# Step 2: Visualize
 python3 olga-plot-barycenter.py input/test-cloud-Tumeh2014 \
     --weights-column duplicate_frequency_percent
 
-# Шаг 3: Расстояния до баранцентра
+# Step 3: Distances to barycenter
 python3 olga-p2b-ot.py input/test-cloud-Tumeh2014 \
     --weights-column duplicate_frequency_percent --statistics-only
 ```
 
-### 2. Попарные сравнения
+### 2. Pairwise comparisons
 
 ```bash
-# Все пары с согласованной сеткой
+# All pairs with consistent grid
 python3 olga-p2p-ot.py input/test-cloud-Tumeh2014 \
     --all --barycenter barycenter.npz \
     --weights-column duplicate_frequency_percent --statistics-only
@@ -268,24 +300,24 @@ python3 olga-p2p-ot.py input/test-cloud-Tumeh2014 \
 ### 3. Leave-one-out validation
 
 ```bash
-# Для каждого пациента:
-# 1. Построить баранцентр без него
-# 2. Вычислить расстояние от него до баранцентра
+# For each patient:
+# 1. Compute barycenter without them
+# 2. Compute distance from them to barycenter
 
 for patient in Patient{01..25}_Base_tcr_pgen.tsv; do
     echo "Processing $patient"
-    # Построить баранцентр без этого пациента
+    # Compute barycenter without this patient
     python3 olga-barycenter-ot.py input/cohort --exclude $patient
-    # Вычислить расстояние
+    # Compute distance
     python3 olga-p2b-ot.py input/cohort $patient --pipeline
 done
 ```
 
-### 4. Shell scripting с pipeline mode
+### 4. Shell scripting with pipeline mode
 
 ```bash
 #!/bin/bash
-# Найти пациента ближайшего к баранцентру
+# Find patient closest to barycenter
 
 min_dist=999999
 closest=""
@@ -304,48 +336,50 @@ echo "Closest to barycenter: $closest (distance: $min_dist)"
 
 ---
 
-## Технические детали
+## Technical Details
 
-### Метрика
+### Metric
 
-**log_l1 метрика в логарифмическом пространстве:**
+**log_l1 metric in logarithmic space:**
 ```
 cost(x₁, x₂) = |log(x₁) - log(x₂)|
 ```
 
-**Почему log_l1, а не L1?**
-- Данные pgen: [1.42e-24, 3.54e-06] (18 порядков величины!)
-- L1 в оригинальном пространстве: различие между 1e-24 и 1e-23 ≈ 0 (подавлено)
-- log_l1: все порядки величины обрабатываются справедливо
+**Why log_l1 instead of L1?**
+- pgen data: [1.42e-24, 3.54e-06] (18 orders of magnitude!)
+- L1 in original space: difference between 1e-24 and 1e-23 ≈ 0 (suppressed)
+- log_l1: all orders of magnitude treated fairly
 
-### Автоматическое расширение grid
+### Automatic Grid Extension
 
-Если данные выходят за границы баранцентра:
-- Grid автоматически расширяется
-- Сохраняется логарифмический шаг
-- Оригинальные точки остаются на своих местах
-- Новые точки получают нулевой вес
+If data falls outside barycenter grid bounds:
+- Grid is automatically extended
+- Logarithmic spacing is preserved
+- Original points stay in place
+- New points get zero weight
 
-Это позволяет сравнивать любые распределения с баранцентром, даже если они не участвовали в его построении.
+This allows comparing any distribution with the barycenter, even if it didn't participate in barycenter computation.
 
-### Структура данных
+### Data Structure
 
-**Входные TSV файлы:** 23 колонки, включая:
+**Input TSV files:** 23 columns, including:
 - `pgen` (col 22) — generation probability
-- `duplicate_count` (col 17) — количество дубликатов
-- `duplicate_frequency_percent` (col 18) — частота в процентах
+- `duplicate_count` (col 17) — number of duplicates
+- `duplicate_frequency_percent` (col 18) — frequency percentage
 
-**Выходные файлы:**
-- `barycenter.npz` — NumPy архив с grid и weights
-- `barycenter_plot.png` — визуализация
+**Output files:**
+- `barycenter.npz` — NumPy archive with grid and weights
+- `barycenter_plot.png` — visualization
+- `distances-boxplot.png` — comparison boxplot
 
 ---
 
-## Документация
+## Documentation
 
-Полная история разработки: `archive/copilot-chat.md`
+Full development history: `archive/copilot-chat.md`  
+Technical architecture: `.copilot-context.md`
 
-## Лицензия
+## License
 
 Research use only.
 
