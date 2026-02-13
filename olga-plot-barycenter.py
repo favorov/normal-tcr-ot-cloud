@@ -136,22 +136,24 @@ def discretize_on_grid(values, weights, grid):
 def main():
     """Main function."""
     if len(sys.argv) < 2:
-        print("Usage: python olga-plot-barycenter.py <input_folder> [--barycenter <file>] [--weights-column <col>] [--freq-column <col>]")
+        print("Usage: python olga-plot-barycenter.py <input_folder> [--barycenter <file>] [--weights-column <col>] [--freq-column <col>] [--output-plot <file>]")
         print("\nParameters:")
         print("  input_folder        : Path to folder containing TSV files")
         print("  --barycenter <file> : Path to barycenter NPZ file (default: barycenter.npz in input_folder)")
         print("  --freq-column       : Column for frequencies (default: pgen)")
         print("  --weights-column    : Column for weights (default: off)")
+        print("  --output-plot <file>: Output plot filename (default: barycenter_plot.png)")
         print("\nExamples:")
         print("  python olga-plot-barycenter.py input/test-cloud-Tumeh2014")
         print("  python olga-plot-barycenter.py input/test-cloud-Tumeh2014 --barycenter ~/data/mybarycenter.npz")
-        print("  python olga-plot-barycenter.py input/test-cloud-Tumeh2014 --barycenter barycenter.npz --freq-column pgen --weights-column duplicate_frequency_percent")
+        print("  python olga-plot-barycenter.py input/test-cloud-Tumeh2014 --output-plot my_plot.png")
         sys.exit(1)
     
     input_folder = sys.argv[1]
     barycenter_file = "barycenter.npz"
     freq_column = "pgen"
     weights_column = "off"
+    output_plot = "barycenter_plot.png"
     
     # Parse remaining arguments
     i = 2
@@ -164,6 +166,9 @@ def main():
             i += 2
         elif sys.argv[i] == "--barycenter" and i + 1 < len(sys.argv):
             barycenter_file = sys.argv[i + 1]
+            i += 2
+        elif sys.argv[i] == "--output-plot" and i + 1 < len(sys.argv):
+            output_plot = sys.argv[i + 1]
             i += 2
         else:
             print(f"Error: Unknown argument '{sys.argv[i]}'")
@@ -249,8 +254,12 @@ def main():
         # Make layout tight
         plt.tight_layout()
         
-        # Save figure
-        output_path = os.path.join(input_folder, 'barycenter_plot.png')
+        # Save figure - determine output path
+        if os.path.isabs(output_plot) or os.path.dirname(output_plot):
+            output_path = os.path.expanduser(output_plot)
+        else:
+            output_path = os.path.join(input_folder, output_plot)
+        
         print(f"Saving plot to: {output_path}")
         plt.savefig(output_path, dpi=150, bbox_inches='tight')
         
