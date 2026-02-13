@@ -346,3 +346,48 @@ Mean: 10.67, Std: 1.03
 - Статистический анализ отклонений
 - Bootstrap confidence intervals для distances
 - Integration тестирование всех компонентов
+
+---
+
+## Сессия 3: Расширение функциональности (12 февраля 2026)
+
+### Стандартизация статистики и новый режим --statistics-only
+
+**Реализовано:**
+- Добавлена идентичная статистика в olga-p2b-ot.py для batch mode
+- Новый ключ --statistics-only для быстрого анализа без таблиц
+- Выводит только статистику для больших матриц
+
+**Тестирование --statistics-only:**
+✅ olga-p2p-ot.py --statistics-only (all-pairs)
+✅ olga-p2p-ot.py file.tsv --statistics-only (one-to-all)
+✅ olga-p2b-ot.py --statistics-only (batch)
+
+**Полная функциональность инструментов:**
+
+olga-p2p-ot.py:
+- Single pair / One-to-all / All-pairs режимы
+- Output: --pipeline / normal (table+stats) / --statistics-only
+
+olga-p2b-ot.py:
+- Single file / Batch режимы
+- Поддерживает weighted columns (--weights-column)
+- Output: --pipeline / normal (table+stats) / --statistics-only
+
+---
+
+## Финальное состояние проекта (12 февраля 2026)
+
+**Полный набор готовых инструментов:**
+✅ ot_utils.py - центральный модуль OT операций
+✅ olga-barycenter-ot.py - LP grid barycenter (200 точек)
+✅ olga-plot-barycenter.py - визуализация баранцентра
+✅ olga-p2p-ot.py - попарные distances (3 режима, 3 варианта вывода)
+✅ olga-p2b-ot.py - distance to barycenter (2 режима, 3 варианта вывода)
+
+**Архитектурные достижения:**
+- Модульная структура с полным DRY принципом
+- Правильная числовая обработка (log_l1 для экстремальной динамики pgen)
+- Pipeline-ready для интеграции в shell скрипты
+- Гибкие режимы вывода (полная таблица, статистика, числа)
+- Полная документированная история разработки
