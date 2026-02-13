@@ -10,7 +10,8 @@ from pathlib import Path
 from ot_utils import (
     load_distribution,
     load_barycenter,
-    compute_wasserstein_distance
+    compute_wasserstein_distance,
+    discretize_distribution
 )
 
 
@@ -142,9 +143,12 @@ def main():
                 weights_column=weights_column
             )
             
+            # Discretize sample to barycenter grid for fair comparison
+            sample_discretized = discretize_distribution(values, weights, grid)
+            
             # Compute distance to barycenter
             distance = compute_wasserstein_distance(
-                values, weights,
+                grid, sample_discretized,
                 grid, barycenter_weights,
                 metric='log_l1',
                 method='emd'
