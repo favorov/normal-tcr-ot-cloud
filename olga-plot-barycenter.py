@@ -136,16 +136,16 @@ def discretize_on_grid(values, weights, grid):
 def main():
     """Main function."""
     if len(sys.argv) < 2:
-        print("Usage: python olga-plot-barycenter.py <input_folder> [barycenter_file] [--weights-column <col>] [--freq-column <col>]")
+        print("Usage: python olga-plot-barycenter.py <input_folder> [--barycenter <file>] [--weights-column <col>] [--freq-column <col>]")
         print("\nParameters:")
         print("  input_folder        : Path to folder containing TSV files")
-        print("  barycenter_file     : Path to barycenter NPZ file (default: barycenter.npz in input_folder)")
+        print("  --barycenter <file> : Path to barycenter NPZ file (default: barycenter.npz in input_folder)")
         print("  --freq-column       : Column for frequencies (default: pgen)")
         print("  --weights-column    : Column for weights (default: off)")
         print("\nExamples:")
         print("  python olga-plot-barycenter.py input/test-cloud-Tumeh2014")
-        print("  python olga-plot-barycenter.py input/test-cloud-Tumeh2014 ~/data/mybarycenter.npz")
-        print("  python olga-plot-barycenter.py input/test-cloud-Tumeh2014 barycenter.npz --freq-column pgen --weights-column duplicate_frequency_percent")
+        print("  python olga-plot-barycenter.py input/test-cloud-Tumeh2014 --barycenter ~/data/mybarycenter.npz")
+        print("  python olga-plot-barycenter.py input/test-cloud-Tumeh2014 --barycenter barycenter.npz --freq-column pgen --weights-column duplicate_frequency_percent")
         sys.exit(1)
     
     input_folder = sys.argv[1]
@@ -162,10 +162,12 @@ def main():
         elif sys.argv[i] == "--weights-column" and i + 1 < len(sys.argv):
             weights_column = sys.argv[i + 1]
             i += 2
+        elif sys.argv[i] == "--barycenter" and i + 1 < len(sys.argv):
+            barycenter_file = sys.argv[i + 1]
+            i += 2
         else:
-            # Assume it's the barycenter file
-            barycenter_file = sys.argv[i]
-            i += 1
+            print(f"Error: Unknown argument '{sys.argv[i]}'")
+            sys.exit(1)
     
     # Determine path to barycenter file
     if os.path.isabs(barycenter_file) or barycenter_file.startswith('~'):

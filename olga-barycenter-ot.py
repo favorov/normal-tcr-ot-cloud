@@ -94,22 +94,25 @@ def load_distribution(filepath, freq_column, weights_column):
 def main():
     """Main function."""
     if len(sys.argv) < 2:
-        print("Usage: python olga-barycenter-ot.py <input_folder> [--freq-column <col>] [--weights-column <col>] [--n-grid <n>]")
+        print("Usage: python olga-barycenter-ot.py <input_folder> [--freq-column <col>] [--weights-column <col>] [--n-grid <n>] [--barycenter <file>]")
         print("\nParameters:")
         print("  input_folder      : Path to folder containing TSV files")
         print("  --freq-column     : Column index (0-based) or column name for sample values (default: pgen)")
         print("  --weights-column  : Column index (0-based) or column name for weights, or 'off' (default: off)")
         print("  --n-grid          : Number of grid points (default: 200)")
+        print("  --barycenter      : Output filename for barycenter (default: barycenter.npz)")
         print("\nExamples:")
         print("  python olga-barycenter-ot.py input/test-cloud-Tumeh2014")
         print("  python olga-barycenter-ot.py input/test-cloud-Tumeh2014 --freq-column pgen --weights-column duplicate_frequency_percent")
         print("  python olga-barycenter-ot.py input/test-cloud-Tumeh2014 --n-grid 500")
+        print("  python olga-barycenter-ot.py input/test-cloud-Tumeh2014 --barycenter my_barycenter.npz")
         sys.exit(1)
     
     input_folder = sys.argv[1]
     freq_column = "pgen"
     weights_column = "off"
     n_grid = 200
+    barycenter_file = "barycenter.npz"
     
     # Parse named arguments
     i = 2
@@ -129,6 +132,9 @@ def main():
             if n_grid <= 1:
                 print("Error: --n-grid must be > 1")
                 sys.exit(1)
+            i += 2
+        elif sys.argv[i] == "--barycenter" and i + 1 < len(sys.argv):
+            barycenter_file = sys.argv[i + 1]
             i += 2
         else:
             print(f"Error: Unknown argument '{sys.argv[i]}'")
@@ -253,7 +259,12 @@ def main():
         print("=" * 60)
         
         # Save barycenter to file
-        output_file = os.path.join(input_folder, "barycenter.npz")
+        # Determine path for barycenter file
+        if os.path.isabs(barycenter_file) or barycenter_file.startswith('~'):
+            output_file = os.path.expanduser(barycenter_file)
+        else:
+            output_file = os.path.join(input_folder, barycenter_file)
+        
         np.savez(output_file, grid=grid, barycenter=barycenter)
         print(f"\nBarycenter saved to: {output_file}")
         

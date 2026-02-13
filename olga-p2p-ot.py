@@ -5,6 +5,7 @@ Supports single pair, one-to-all, and all-pairs comparisons.
 """
 
 import sys
+import os
 import numpy as np
 from pathlib import Path
 from itertools import combinations
@@ -18,7 +19,7 @@ from ot_utils import (
 )
 
 
-def compute_distance_single_pair(input_folder, file1, file2, freq_column, weights_column, n_grid, use_barycenter_grid=False):
+def compute_distance_single_pair(input_folder, file1, file2, freq_column, weights_column, n_grid, use_barycenter_grid=False, barycenter_file="barycenter.npz"):
     """Compute distance between two specific files."""
     filepath1 = Path(input_folder) / file1
     filepath2 = Path(input_folder) / file2
@@ -28,7 +29,12 @@ def compute_distance_single_pair(input_folder, file1, file2, freq_column, weight
     
     # Use barycenter grid if available for consistent comparison
     if use_barycenter_grid:
-        barycenter_path = Path(input_folder) / "barycenter.npz"
+        # Determine barycenter path
+        if os.path.isabs(barycenter_file) or barycenter_file.startswith('~'):
+            barycenter_path = Path(os.path.expanduser(barycenter_file))
+        else:
+            barycenter_path = Path(input_folder) / barycenter_file
+        
         if barycenter_path.exists():
             grid, _ = load_barycenter(str(barycenter_path))
             # Extend grid if data falls outside barycenter range
@@ -55,7 +61,7 @@ def compute_distance_single_pair(input_folder, file1, file2, freq_column, weight
     return distance, file1, file2
 
 
-def compute_distance_one_to_all(input_folder, ref_file, freq_column, weights_column, n_grid, use_barycenter_grid=False):
+def compute_distance_one_to_all(input_folder, ref_file, freq_column, weights_column, n_grid, use_barycenter_grid=False, barycenter_file="barycenter.npz"):
     """Compute distances from one file to all others."""
     input_path = Path(input_folder)
     all_files = sorted(input_path.glob("*.tsv"))
@@ -69,7 +75,12 @@ def compute_distance_one_to_all(input_folder, ref_file, freq_column, weights_col
     
     # Determine grid
     if use_barycenter_grid:
-        barycenter_path = input_path / "barycenter.npz"
+        # Determine barycenter path
+        if os.path.isabs(barycenter_file) or barycenter_file.startswith('~'):
+            barycenter_path = Path(os.path.expanduser(barycenter_file))
+        else:
+            barycenter_path = input_path / barycenter_file
+        
         if barycenter_path.exists():
             grid, _ = load_barycenter(str(barycenter_path))
             # Load all values to determine range for grid extension
@@ -113,7 +124,7 @@ def compute_distance_one_to_all(input_folder, ref_file, freq_column, weights_col
     return results
 
 
-def compute_distance_all_pairs(input_folder, freq_column, weights_column, n_grid, use_barycenter_grid=False):
+def compute_distance_all_pairs(input_folder, freq_column, weights_column, n_grid, use_barycenter_grid=False, barycenter_file="barycenter.npz"):
     """Compute distances for all pairs (upper triangle of distance matrix)."""
     input_path = Path(input_folder)
     all_files = sorted(input_path.glob("*.tsv"))
@@ -134,7 +145,12 @@ def compute_distance_all_pairs(input_folder, freq_column, weights_column, n_grid
     
     # Determine grid
     if use_barycenter_grid:
-        barycenter_path = input_path / "barycenter.npz"
+        # Determine barycenter path
+        if os.path.isabs(barycenter_file) or barycenter_file.startswith('~'):
+            barycenter_path = Path(os.path.expanduser(barycenter_file))
+        else:
+            barycenter_path = input_path / barycenter_file
+        
         if barycenter_path.exists():
             grid, _ = load_barycenter(str(barycenter_path))
             # Find global range from all distributions
@@ -234,7 +250,7 @@ def main():
         print("  --all                  : Enable batch mode (one-to-all or all-pairs)")
         print("  --pipeline             : Output only distances, one per line (for scripting)")
         print("  --statistics-only      : Enable batch mode and show only statistics")
-        print("  --use-barycenter-grid  : Use barycenter grid (if barycenter.npz exists) for consistent comparison with p2b")
+        print("  --barycenter <file>    : Use barycenter grid from file for consistent comparison with p2b (default: barycenter.npz)")
         print()
         print("Examples:")
         print("  python olga-p2p-ot.py input/test-cloud-Tumeh2014 Patient01.tsv Patient02.tsv")
@@ -251,6 +267,7 @@ def main():
     all_mode = False
     statistics_only = False
     use_barycenter_grid = False
+    barycenter_file = "barycenter.npz"
     file1 = None
     file2 = None
     
@@ -285,9 +302,14 @@ def main():
             statistics_only = True
             all_mode = True
             i += 1
-        elif arg == "--use-barycenter-grid":
-            use_barycenter_grid = True
-            i += 1
+        elif arg == "--barycenter":
+            if i + 1 < len(sys.argv):
+                barycenter_file = sys.argv[i + 1]
+                use_barycenter_grid = True
+                i += 2
+            else:
+                print("Error: --barycenter requires a filename argument")
+                sys.exit(1)
         elif arg.endswith('.tsv') and file1 is None:
             file1 = arg
             i += 1
@@ -306,7 +328,7 @@ def main():
                 if not pipeline_mode:
                     print(f"Loading reference file: {file1}")
                     print()
-                results = compute_distance_one_to_all(input_folder, file1, freq_column, weights_column, n_grid, use_barycenter_grid)
+                results = compute_distance_one_to_all(input_folder, file1, freq_column, weights_column, n_grid, use_barycenter_grid, barycenter_file)
                 if not pipeline_mode:
                     if statistics_only:
                         print_results_normal(results, f"STATISTICS FROM {file1} TO ALL OTHERS", statistics_only=True)
@@ -319,7 +341,7 @@ def main():
                 if not pipeline_mode:
                     print(f"Computing all-pairs distances...")
                     print()
-                results = compute_distance_all_pairs(input_folder, freq_column, weights_column, n_grid, use_barycenter_grid)
+                results = compute_distance_all_pairs(input_folder, freq_column, weights_column, n_grid, use_barycenter_grid, barycenter_file)
                 if not pipeline_mode:
                     if statistics_only:
                         print_results_normal(results, "ALL PAIRWISE WASSERSTEIN DISTANCES - STATISTICS", statistics_only=True)
@@ -341,7 +363,7 @@ def main():
             
             distance, f1, f2 = compute_distance_single_pair(
                 input_folder, file1, file2,
-                freq_column, weights_column, n_grid, use_barycenter_grid
+                freq_column, weights_column, n_grid, use_barycenter_grid, barycenter_file
             )
             
             if pipeline_mode:

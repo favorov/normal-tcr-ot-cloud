@@ -5,7 +5,137 @@
 
 ---
 
-## Сессия 1: Проблема левого хвоста (10 февраля 2026)
+## Сессия 5: Унификация параметра --barycenter (11 февраля 2026)
+
+### Проблема
+
+**Запрос пользователя:** "Проверь, пожалуйста, что все наши скрипты одинаково понимают параметра --barycenter"
+
+**Обнаруженная несогласованность:**
+
+```
+Script                  | Barycenter File Specification
+------------------------|----------------------------------------------
+olga-p2b-ot.py         | ✅ --barycenter <file>  (custom path allowed)
+olga-p2p-ot.py         | ❌ --use-barycenter-grid (boolean, hardcoded "barycenter.npz")
+olga-plot-barycenter   | ❌ barycenter_file (positional argument)
+olga-barycenter-ot.py  | ❌ (no parameter, always "barycenter.npz")
+```
+
+**Проблемы:**
+1. **Разные интерфейсы** — невозможно предсказать как указать кастомный файл
+2. **p2p** — нет способа указать путь к barycenter при использовании `--use-barycenter-grid`
+3. **plot** — позиционный аргумент конфликтует с обычным стилем CLI
+4. **barycenter** — нет возможности сохранить в custom location
+
+### Решение
+
+Привели все скрипты к единому стилю: **`--barycenter <file>`** (default: `barycenter.npz`)
+
+#### 1. olga-barycenter-ot.py
+
+**Добавлено:**
+```python
+--barycenter <file>  # Output filename (default: barycenter.npz)
+```
+
+**Изменения:**
+- Добавлен параметр `--barycenter` для указания имени выходного файла
+- Поддержка абсолютных путей и `~` (expand)
+- Относительные пути разрешаются относительно input_folder
+
+**Пример:**
+```bash
+python3 olga-barycenter-ot.py input/test-cloud-Tumeh2014 --barycenter my_barycenter.npz
+```
+
+#### 2. olga-p2p-ot.py
+
+**Изменено:**
+```python
+# Было:
+--use-barycenter-grid  # Boolean flag, hardcoded path
+
+# Стало:
+--barycenter <file>    # Path to barycenter (default: barycenter.npz)
+```
+
+**Изменения:**
+- Заменён `--use-barycenter-grid` на `--barycenter <file>`
+- Добавлен параметр `barycenter_file` во все функции:
+  - `compute_distance_single_pair(..., barycenter_file="barycenter.npz")`
+  - `compute_distance_one_to_all(..., barycenter_file="barycenter.npz")`
+  - `compute_distance_all_pairs(..., barycenter_file="barycenter.npz")`
+- Поддержка абсолютных путей и `~`
+- Добавлен `import os` для `os.path.isabs()`
+
+**Примеры:**
+```bash
+# Default barycenter.npz in input folder
+python3 olga-p2p-ot.py input/test --all --barycenter barycenter.npz
+
+# Custom location
+python3 olga-p2p-ot.py input/test --all --barycenter ~/data/my_barycenter.npz
+```
+
+#### 3. olga-plot-barycenter.py
+
+**Изменено:**
+```python
+# Было:
+python3 olga-plot-barycenter.py <folder> [barycenter_file]  # Positional
+
+# Стало:
+python3 olga-plot-barycenter.py <folder> --barycenter <file>  # Flag
+```
+
+**Изменения:**
+- Убран позиционный аргумент `barycenter_file`
+- Добавлен флаг `--barycenter <file>` (default: `barycenter.npz`)
+- Убрана логика "assume it's the barycenter file" из парсера
+- Теперь все неизвестные аргументы вызывают ошибку
+
+**Примеры:**
+```bash
+# Default
+python3 olga-plot-barycenter.py input/test-cloud-Tumeh2014
+
+# Custom barycenter
+python3 olga-plot-barycenter.py input/test-cloud-Tumeh2014 --barycenter ~/data/my_barycenter.npz
+```
+
+### Обновлённая документация
+
+#### README.md
+- Добавлен `--barycenter` во все секции параметров
+- Обновлены примеры использования
+- Исправлен workflow "Попарные сравнения" (заменён `--use-barycenter-grid` на `--barycenter`)
+
+#### .copilot-context.md
+- Обновлено описание `olga-p2p-ot.py` ("Key flags")
+- Обновлена секция "Grid handling with --barycenter"
+- Исправлен integration test пример
+
+### Итог
+
+**Достигнута полная согласованность:**
+```bash
+# Все скрипты теперь одинаково работают с barycenter
+olga-barycenter-ot.py <folder> --barycenter output.npz
+olga-plot-barycenter.py <folder> --barycenter input.npz
+olga-p2p-ot.py <folder> --all --barycenter input.npz
+olga-p2b-ot.py <folder> --all --barycenter input.npz
+```
+
+**Преимущества:**
+- ✅ Единый интерфейс для всех скриптов
+- ✅ Предсказуемое поведение
+- ✅ Поддержка кастомных путей везде
+- ✅ Консистентная документация
+
+---
+
+## Сессия 4: Обновление документации (11 февраля 2026)
 
 ### Исходная проблема
 
