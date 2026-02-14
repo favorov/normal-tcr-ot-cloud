@@ -3,9 +3,18 @@
 Common utilities for Optimal Transport operations on TCR distributions.
 Provides consistent distance computation across all scripts.
 """
+import re
 import numpy as np
 import pandas as pd
 import ot
+
+
+def _label_from_filename(file_path):
+    """Extract patient number from filename (PatientNN -> PNN)."""
+    match = re.match(r"patient(\d+)", file_path.stem, flags=re.IGNORECASE)
+    if match:
+        return f"P{match.group(1)}"
+    return file_path.stem
 
 
 def _find_column_index(df, column_spec, param_name):

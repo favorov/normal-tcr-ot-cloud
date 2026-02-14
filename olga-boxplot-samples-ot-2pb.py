@@ -6,11 +6,11 @@ Creates a boxplot of distances for normal samples and overlays mapped samples.
 
 import sys
 import os
-import re
 from pathlib import Path
 import numpy as np
 import matplotlib.pyplot as plt
 from ot_utils import (
+    _label_from_filename,
     load_distribution,
     load_barycenter,
     compute_wasserstein_distance,
@@ -23,13 +23,6 @@ def _resolve_barycenter_path(barycenter_folder, barycenter_file):
     if os.path.isabs(barycenter_file) or barycenter_file.startswith("~"):
         return Path(os.path.expanduser(barycenter_file))
     return barycenter_folder / barycenter_file
-
-
-def _label_from_filename(file_path):
-    match = re.match(r"patient(\d+)", file_path.stem, flags=re.IGNORECASE)
-    if match:
-        return f"P{match.group(1)}"
-    return file_path.stem
 
 
 def _load_sample_files(samples_path):
