@@ -32,6 +32,46 @@ def _label_from_filename(file_path):
     return file_path.stem
 
 
+def _load_sample_files(samples_path):
+    """
+    Load sample files from either a folder or a file list.
+    
+    Parameters
+    ----------
+    samples_path : Path
+        Either a folder containing TSV files, or a text file with one file path per line
+        
+    Returns
+    -------
+    files : list of Path
+        List of sample file paths
+    output_folder : Path
+        Folder to use for output (samples_path if folder, parent dir if file list)
+    """
+    if samples_path.is_dir():
+        # samples_path is a folder - get all TSV files
+        files = sorted(samples_path.glob("*.tsv"))
+        output_folder = samples_path
+    elif samples_path.is_file():
+        # samples_path is a file - read list of files
+        with open(samples_path, 'r') as f:
+            lines = [line.strip() for line in f if line.strip() and not line.strip().startswith('#')]
+        files = [Path(os.path.expanduser(line)) for line in lines]
+        # Verify all files exist
+        missing = [f for f in files if not f.exists()]
+        if missing:
+            print(f"Error: The following files from list do not exist:")
+            for f in missing:
+                print(f"  {f}")
+            sys.exit(1)
+        output_folder = samples_path.parent
+    else:
+        print(f"Error: samples path does not exist: {samples_path}")
+        sys.exit(1)
+    
+    return files, output_folder
+
+
 def _compute_distances_to_barycenter(files, grid, barycenter_weights, freq_column, weights_column):
     distances = []
     for file_path in files:
@@ -58,24 +98,26 @@ def _compute_distances_to_barycenter(files, grid, barycenter_weights, freq_colum
 def main():
     """Main function."""
     if len(sys.argv) < 3 or sys.argv[1] in ["-h", "--help"]:
-        print("Usage: python olga-map-samples-p2b.py <barycenter_folder> <samples_folder> [options]")
+        print("Usage: python olga-boxplot-samples-ot-2pb.py <barycenter_folder> <samples> [options]")
         print("\nParameters:")
         print("  barycenter_folder     : Folder containing TSV files and barycenter.npz")
-        print("  samples_folder        : Folder with TSV files to map to the barycenter")
+        print("  samples               : Either:")
+        print("                          - Folder with TSV files to map")
+        print("                          - Text file with one TSV file path per line")
         print("  --freq-column <col>   : Column index or name for frequencies (default: pgen)")
         print("  --weights-column <col>: Column index or name for weights, or 'off' (default: off)")
         print("  --barycenter <file>   : Barycenter file (default: barycenter.npz)")
         print("  --output-plot <file>  : Output plot filename (default: ot-distance-boxplot.png)")
         print("\nOutput:")
-        print("  Plot saved in samples_folder if filename has no directory component")
+        print("  Plot saved in samples folder (or parent folder if samples is a file list)")
         print("\nExamples:")
-        print("  python olga-map-samples-p2b.py input/test-cloud-Tumeh2014 input/new-samples")
-        print("  python olga-map-samples-p2b.py input/test-cloud-Tumeh2014 input/new-samples \\")
+        print("  python olga-boxplot-samples-ot-2pb.py input/test-cloud-Tumeh2014 input/new-samples")
+        print("  python olga-boxplot-samples-ot-2pb.py input/test-cloud-Tumeh2014 samples_list.txt \\")
         print("    --weights-column duplicate_frequency_percent")
         sys.exit(1 if len(sys.argv) < 3 else 0)
 
     barycenter_folder = Path(sys.argv[1])
-    samples_folder = Path(sys.argv[2])
+    samples_path = Path(sys.argv[2])
 
     freq_column = "pgen"
     weights_column = "off"
@@ -110,13 +152,13 @@ def main():
         grid, barycenter_weights = load_barycenter(str(barycenter_path))
 
         normal_files = sorted(barycenter_folder.glob("*.tsv"))
-        mapped_files = sorted(samples_folder.glob("*.tsv"))
+        mapped_files, output_folder = _load_sample_files(samples_path)
 
         if len(normal_files) == 0:
             print(f"Error: No TSV files found in {barycenter_folder}")
             sys.exit(1)
         if len(mapped_files) == 0:
-            print(f"Error: No TSV files found in {samples_folder}")
+            print(f"Error: No TSV files found for samples")
             sys.exit(1)
 
         normal_distances = _compute_distances_to_barycenter(
@@ -184,11 +226,11 @@ def main():
         ax.set_title("Distances to barycenter")
         ax.grid(axis="y", alpha=0.25)
 
-        # Determine output path: if output_plot has directory component, use it; otherwise save in samples_folder
+        # Determine output path: if output_plot has directory component, use it; otherwise save in output_folder
         if os.path.isabs(output_plot) or os.path.dirname(output_plot):
             output_path = Path(os.path.expanduser(output_plot))
         else:
-            output_path = samples_folder / output_plot
+            output_path = output_folder / output_plot
         
         fig.tight_layout()
         fig.savefig(output_path, dpi=150)

@@ -35,6 +35,45 @@ def _label_from_filename(file_path):
     return file_path.stem
 
 
+def _load_sample_files(samples_path):
+    """
+    Load sample files from folder or file list.
+    
+    Parameters
+    ----------
+    samples_path : Path
+        Either a folder containing *.tsv files, or a text file listing file paths.
+        
+    Returns
+    -------
+    files : list of Path
+        List of TSV file paths.
+    output_folder : Path
+        Folder for saving outputs (samples_path if folder, parent if file list).
+    """
+    samples_path = Path(os.path.expanduser(str(samples_path)))
+    
+    if samples_path.is_dir():
+        files = sorted(samples_path.glob("*.tsv"))
+        output_folder = samples_path
+    elif samples_path.is_file():
+        with open(samples_path, 'r') as f:
+            lines = [line.strip() for line in f if line.strip() and not line.strip().startswith('#')]
+        files = [Path(os.path.expanduser(line)) for line in lines]
+        missing = [f for f in files if not f.exists()]
+        if missing:
+            print(f"Error: The following files from {samples_path} do not exist:")
+            for f in missing:
+                print(f"  {f}")
+            sys.exit(1)
+        output_folder = samples_path.parent
+    else:
+        print(f"Error: Path does not exist: {samples_path}")
+        sys.exit(1)
+    
+    return files, output_folder
+
+
 def _compute_distances_to_barycenter(files, grid, barycenter_weights, freq_column, weights_column):
     """
     Compute distances from multiple samples to barycenter.
@@ -220,7 +259,9 @@ def main():
         print("Usage: python olga-samples-p2b-pval.py <barycenter_folder> <samples_folder> [options]")
         print("\nParameters:")
         print("  barycenter_folder     : Folder containing TSV files and barycenter.npz")
-        print("  samples_folder        : Folder with TSV files to evaluate")
+        print("  samples               : Either:")
+        print("                          - Folder with TSV files to evaluate")
+        print("                          - Text file with one TSV file path per line")
         print("  --freq-column <col>   : Column index or name for frequencies (default: pgen)")
         print("  --weights-column <col>: Column index or name for weights, or 'off' (default: off)")
         print("  --barycenter <file>   : Barycenter file (default: barycenter.npz)")
@@ -230,12 +271,12 @@ def main():
         print("  Results sorted by Bonferroni-adjusted p-value (most significant first)")
         print("\nExamples:")
         print("  python olga-samples-p2b-pval.py input/test-cloud-Tumeh2014 input/new-samples")
-        print("  python olga-samples-p2b-pval.py input/test-cloud-Tumeh2014 input/new-samples \\")
+        print("  python olga-samples-p2b-pval.py input/test-cloud-Tumeh2014 samples_list.txt \\")
         print("    --weights-column duplicate_frequency_percent")
         sys.exit(1 if len(sys.argv) < 3 else 0)
 
     barycenter_folder = Path(sys.argv[1])
-    samples_folder = Path(sys.argv[2])
+    samples_path = Path(sys.argv[2])
 
     freq_column = "pgen"
     weights_column = "off"
@@ -263,13 +304,13 @@ def main():
 
     # Get TSV files
     barycenter_files = sorted(barycenter_folder.glob("*.tsv"))
-    samples_files = sorted(samples_folder.glob("*.tsv"))
+    samples_files, _ = _load_sample_files(samples_path)
 
     if not barycenter_files:
         print(f"Error: No TSV files found in {barycenter_folder}")
         sys.exit(1)
     if not samples_files:
-        print(f"Error: No TSV files found in {samples_folder}")
+        print(f"Error: No sample TSV files found")
         sys.exit(1)
 
     print(f"Found {len(barycenter_files)} barycenter files, {len(samples_files)} sample files")
