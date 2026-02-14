@@ -10,11 +10,20 @@ import ot
 
 
 def _label_from_filename(file_path):
-    """Extract patient number from filename (PatientNN -> PNN)."""
-    match = re.match(r"patient(\d+)", file_path.stem, flags=re.IGNORECASE)
-    if match:
-        return f"P{match.group(1)}"
-    return file_path.stem
+    """Extract patient number and Base/Post status from filename."""
+    name = file_path.stem
+    match = re.match(r"patient(\d+)", name, flags=re.IGNORECASE)
+    if not match:
+        return name
+
+    number = match.group(1).zfill(2)
+    suffix = ""
+    if re.search(r"base", name, flags=re.IGNORECASE):
+        suffix = "B"
+    elif re.search(r"post", name, flags=re.IGNORECASE):
+        suffix = "P"
+
+    return f"{number}{suffix}" if suffix else number
 
 
 def _find_column_index(df, column_spec, param_name):
