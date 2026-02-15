@@ -169,7 +169,7 @@ def main():
             weights_column
         )
 
-        fig, ax = plt.subplots(figsize=(8, 6))
+        fig, ax = plt.subplots(figsize=(16, 12))
 
         boxprops = dict(facecolor="#90EE90", color="#0B5D1E")
         medianprops = dict(color="#000000", linewidth=1.5)
@@ -188,7 +188,7 @@ def main():
         )
 
         rng = np.random.default_rng(0)
-        jitter = rng.normal(0.0, 0.03, size=len(mapped_distances))
+        jitter = rng.normal(0.0, 0.08, size=len(mapped_distances))
         ax.scatter(
             1 + jitter,
             mapped_distances,
@@ -202,13 +202,13 @@ def main():
         for file_path, distance, offset in zip(mapped_files, mapped_distances, jitter):
             label = _label_from_filename(file_path)
             ax.text(
-                1 + offset + 0.01,
-                distance,
+                1 + offset,
+                distance + 0.025,
                 label,
                 fontsize=8,
                 color="#000000",
-                ha="left",
-                va="center",
+                ha="center",
+                va="bottom",
                 zorder=4
             )
 

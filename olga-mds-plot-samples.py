@@ -322,7 +322,7 @@ def main():
     mds_coords = mds.fit_transform(full_distances)
 
     # Create plot
-    fig, ax = plt.subplots(figsize=(12, 10))
+    fig, ax = plt.subplots(figsize=(24, 20))
 
     # Plot barycenter files (light green #90EE90)
     for i in range(n_barycenter):
@@ -344,7 +344,7 @@ def main():
         # Add label
         label = _label_from_filename(samples_files[i])
         ax.text(
-            x, y + 0.08,
+            x, y + 0.04,
             label,
             ha='center', va='bottom',
             fontsize=9, fontweight='bold',

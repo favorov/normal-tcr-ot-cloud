@@ -228,7 +228,7 @@ def main():
         print("Generating plot...")
         
         # Create figure
-        fig, ax = plt.subplots(figsize=(13, 7))
+        fig, ax = plt.subplots(figsize=(26, 14))
         
         # Plot all individual distributions in light gray
         for i, dist in enumerate(discretized_distributions):
