@@ -333,6 +333,7 @@ def main():
         pvalue = compute_pvalue(distance, model)
         label = _label_from_filename(sample_file)
         results.append({
+            'filename': str(sample_file),
             'sample': label,
             'distance': distance,
             'pvalue': pvalue
@@ -349,12 +350,12 @@ def main():
 
     # Print table
     print()
-    print("=" * 95)
-    print(f"{'Sample':<38} {'Distance':>11} {'P-value':>12} {'Bonf. p':>11}")
-    print("=" * 95)
+    print("=" * 115)
+    print(f"{'Label':<8} {'Filename':<50} {'Distance':>11} {'P-value':>12} {'Bonf. p':>11}")
+    print("=" * 115)
     for row in results:
-        print(f"{row['sample']:<38} {row['distance']:>11.6f} {row['pvalue']:>12.6e} {row['pvalue_adjusted']:>11.6e}")
-    print("=" * 95)
+        print(f"{row['sample']:<8} {row['filename']:<50} {row['distance']:>11.6f} {row['pvalue']:>12.6e} {row['pvalue_adjusted']:>11.6e}")
+    print("=" * 115)
     print()
 
     # Print summary statistics
