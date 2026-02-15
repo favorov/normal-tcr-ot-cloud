@@ -476,8 +476,11 @@ This allows comparing any distribution with the barycenter, even if it didn't pa
 
 **Output files:**
 - `barycenter.npz` — NumPy archive with grid and weights
-- `barycenter_plot.png` — visualization
-- `distances-boxplot.png` — comparison boxplot
+- `barycenter_plot.png` — visualization (26×14 inches)
+- `distances-boxplot.png` — comparison boxplot (16×12 inches)
+- `ot-mds-plot.png` — MDS spatial layout (24×20 inches)
+
+All figures are sized 2x compared to standard plots for improved clarity and reduced label overlap with large sample sets.
 
 ---
 
