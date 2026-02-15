@@ -20,6 +20,45 @@
 python3 olga-boxplot-samples-ot-2pb.py <barycenter_folder> <samples_folder> [options]
 ```
 
+---
+
+## Сессия 7: Гибкий ввод сэмплов и единые метки (14 февраля 2026)
+
+### Гибкий параметр samples
+
+**Запрос:** Переименовать `samples_folder` в `samples` и разрешить список файлов.
+
+**Реализация:** в скриптах
+- `olga-boxplot-samples-ot-2pb.py`
+- `olga-mds-plot-samples.py`
+- `olga-samples-p2b-pval.py`
+
+добавлена загрузка сэмплов из:
+- папки с TSV, или
+- текстового файла со списком путей (один TSV на строку, `#` для комментариев).
+
+**Поведение вывода:** если `samples` — файл списка, выходные графики сохраняются в его родительскую папку.
+
+### Единый генератор меток
+
+**Запрос:** Вынести генератор меток в `ot_utils.py` и сделать формат Base/Post.
+
+**Новая логика меток:**
+- `Patient01_Base_tcr_pgen.tsv` → `01B`
+- `Patient17_Post_tcr_pgen.tsv` → `17P`
+- Без Base/Post: только номер пациента
+
+**Изменения:**
+- `_label_from_filename()` перенесена в `ot_utils.py`
+- Все три скрипта используют общий helper
+- `olga-samples-p2b-pval.py` теперь выводит метки через общий helper
+
+### Документация
+
+Обновлены:
+- `README.md` — параметр `samples`, примеры со списком файлов, формат меток
+- `.copilot-context.md` — описание общего helper и нового способа ввода сэмплов
+
 **Параметры:**
 - `--freq-column <col>` — default: pgen
 - `--weights-column <col>` — default: off

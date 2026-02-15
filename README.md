@@ -210,13 +210,13 @@ Compares distances from two sample sets to a barycenter using a boxplot.
 ### Usage
 
 ```bash
-python3 olga-boxplot-samples-ot-2pb.py <barycenter_folder> <samples_folder> [options]
+python3 olga-boxplot-samples-ot-2pb.py <barycenter_folder> <samples> [options]
 ```
 
 ### Parameters
 
 - `barycenter_folder` — folder with TSV files and barycenter.npz
-- `samples_folder` — folder with samples to map
+- `samples` — either a folder with samples to map or a text file with one TSV path per line
 - `--freq-column <col>` — default: pgen
 - `--weights-column <col>` — default: off
 - `--barycenter <file>` — barycenter file (default: barycenter.npz)
@@ -227,11 +227,11 @@ python3 olga-boxplot-samples-ot-2pb.py <barycenter_folder> <samples_folder> [opt
 ```bash
 python3 olga-boxplot-samples-ot-2pb.py input/test-cloud-Tumeh2014 input/new-samples
 
-python3 olga-boxplot-samples-ot-2pb.py input/test-cloud-Tumeh2014 input/new-samples \
+python3 olga-boxplot-samples-ot-2pb.py input/test-cloud-Tumeh2014 samples_list.txt \
     --weights-column duplicate_frequency_percent --output-plot comparison.png
 ```
 
-**Output:** Boxplot with light green box (normal sample distances) and orange points (mapped sample distances with labels like P01, P02, etc.).
+**Output:** Boxplot with light green box (normal sample distances) and orange points (mapped sample distances with labels like 01B, 17P, etc.). If Base/Post is not found, the label is the patient number only.
 
 ---
 
@@ -242,13 +242,13 @@ Creates an MDS visualization showing relationships between samples and a barycen
 ### Usage
 
 ```bash
-python3 olga-mds-plot-samples.py <barycenter_folder> <samples_folder> [options]
+python3 olga-mds-plot-samples.py <barycenter_folder> <samples> [options]
 ```
 
 ### Parameters
 
 - `barycenter_folder` — folder with TSV files and barycenter.npz
-- `samples_folder` — folder with samples to map
+- `samples` — either a folder with samples to map or a text file with one TSV path per line
 - `--freq-column <col>` — default: pgen
 - `--weights-column <col>` — default: off
 - `--barycenter <file>` — barycenter file (default: barycenter.npz)
@@ -267,11 +267,11 @@ python3 olga-mds-plot-samples.py <barycenter_folder> <samples_folder> [options]
 ```bash
 python3 olga-mds-plot-samples.py input/test-cloud-Tumeh2014 input/new-samples
 
-python3 olga-mds-plot-samples.py input/test-cloud-Tumeh2014 input/new-samples \
+python3 olga-mds-plot-samples.py input/test-cloud-Tumeh2014 samples_list.txt \
     --weights-column duplicate_frequency_percent --output-plot mds_analysis.png
 ```
 
-**Output:** 2D MDS plot showing spatial relationships. Light green points = normal samples, orange points = mapped samples (labeled P01, P02, etc.), 8-pointed green star = barycenter.
+**Output:** 2D MDS plot showing spatial relationships. Light green points = normal samples, orange points = mapped samples (labeled like 01B, 17P), 8-pointed green star = barycenter.
 
 ---
 
@@ -282,13 +282,13 @@ Computes p-values for samples based on their distance to a barycenter.
 ### Usage
 
 ```bash
-python3 olga-samples-p2b-pval.py <barycenter_folder> <samples_folder> [options]
+python3 olga-samples-p2b-pval.py <barycenter_folder> <samples> [options]
 ```
 
 ### Parameters
 
 - `barycenter_folder` — folder with TSV files and barycenter.npz
-- `samples_folder` — folder with samples to evaluate
+- `samples` — either a folder with samples to evaluate or a text file with one TSV path per line
 - `--freq-column <col>` — default: pgen
 - `--weights-column <col>` — default: off
 - `--barycenter <file>` — barycenter file (default: barycenter.npz)
@@ -305,7 +305,7 @@ python3 olga-samples-p2b-pval.py <barycenter_folder> <samples_folder> [options]
 ### Output format
 
 Tabular results with three columns:
-- `Sample` — filename of the test sample
+- `Sample` — label derived from filename (e.g., 01B or 17P)
 - `Distance` — Wasserstein distance to barycenter
 - `P-value` — raw two-tailed p-value (before correction)
 - `Bonf. p` — Bonferroni-adjusted p-value (for significance assessment)
@@ -320,7 +320,7 @@ Summary statistics:
 ```bash
 python3 olga-samples-p2b-pval.py input/test-cloud-Tumeh2014 input/new-samples
 
-python3 olga-samples-p2b-pval.py input/test-cloud-Tumeh2014 input/new-samples \
+python3 olga-samples-p2b-pval.py input/test-cloud-Tumeh2014 samples_list.txt \
     --weights-column duplicate_frequency_percent
 ```
 
