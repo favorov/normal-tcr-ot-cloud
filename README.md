@@ -377,6 +377,48 @@ All scripts support flexible column specification:
 
 ---
 
+## Custom Sample Labels
+
+When using a text file to specify samples (instead of a folder), you can optionally provide custom labels for each file. This is useful when files from different directories have similar names, or when you want specific labels for publication.
+
+### Format
+
+```text
+# Each line: file_path [optional_custom_label]
+/path/to/data1/Patient01_Base_tcr_pgen.tsv    P1-Before
+/path/to/data2/Patient01_Base_tcr_pgen.tsv    P1-After
+/path/to/Patient03_Base_tcr_pgen.tsv          ControlGroup
+/path/to/Patient04_Base_tcr_pgen.tsv
+# ^ No label specified - will auto-generate: 04B
+```
+
+### Behavior
+
+- **With custom label:** Uses the provided label exactly as is
+- **Without custom label:** Auto-generates label from filename (e.g., Patient01_Base → 01B, Patient17_Post → 17P)
+- **Separator:** Any whitespace (space or tab) between path and label
+
+### Example
+
+```bash
+# Create sample list with custom labels
+cat > my_samples.txt << EOF
+/data/cohort1/Patient01_Base_tcr_pgen.tsv    Cohort1-P1
+/data/cohort2/Patient01_Base_tcr_pgen.tsv    Cohort2-P1
+/data/special/Patient05_Base_tcr_pgen.tsv    SpecialCase
+/data/control/Patient10_Base_tcr_pgen.tsv
+EOF
+
+# Use in any visualization/analysis script
+python3 olga-boxplot-samples-ot-2pb.py input/test-cloud-Tumeh2014 my_samples.txt
+python3 olga-mds-plot-samples.py input/test-cloud-Tumeh2014 my_samples.txt
+python3 olga-samples-p2b-pval.py input/test-cloud-Tumeh2014 my_samples.txt
+```
+
+**Output:** Labels on plots and in tables will show "Cohort1-P1", "Cohort2-P1", "SpecialCase", and "10B" (auto-generated).
+
+---
+
 ## Typical Workflows
 
 ### 1. Compute barycenter and analyze

@@ -29,29 +29,45 @@ def _resolve_barycenter_path(barycenter_folder, barycenter_file):
 
 def _load_sample_files(samples_path):
     """
-    Load sample files from folder or file list.
+    Load sample files from folder or text file.
     
     Parameters
     ----------
-    samples_path : Path
-        Either a folder containing *.tsv files, or a text file listing file paths.
+    samples_path : Path or str
+        Either a folder with TSV files or a text file with one path per line.
+        In the text file, each line can optionally include a custom label after the path,
+        separated by whitespace: /path/to/file.tsv CustomLabel
         
     Returns
     -------
     files : list of Path
-        List of TSV file paths.
+        List of sample file paths.
     output_folder : Path
-        Folder for saving outputs (samples_path if folder, parent if file list).
+        Folder to use for output.
+    custom_labels : dict
+        Dictionary mapping file paths to custom labels (empty if folder input or no labels specified).
     """
     samples_path = Path(os.path.expanduser(str(samples_path)))
+    custom_labels = {}
     
     if samples_path.is_dir():
         files = sorted(samples_path.glob("*.tsv"))
         output_folder = samples_path
     elif samples_path.is_file():
+        files = []
         with open(samples_path, 'r') as f:
-            lines = [line.strip() for line in f if line.strip() and not line.strip().startswith('#')]
-        files = [Path(os.path.expanduser(line)) for line in lines]
+            for line in f:
+                line = line.strip()
+                if not line or line.startswith('#'):
+                    continue
+                # Split on whitespace - first part is path, rest (if any) is label
+                parts = line.split(None, 1)  # split on first whitespace only
+                file_path = Path(os.path.expanduser(parts[0]))
+                files.append(file_path)
+                if len(parts) > 1:
+                    # Custom label provided
+                    custom_labels[file_path] = parts[1].strip()
+        
         missing = [f for f in files if not f.exists()]
         if missing:
             print(f"Error: The following files from {samples_path} do not exist:")
@@ -63,7 +79,7 @@ def _load_sample_files(samples_path):
         print(f"Error: Path does not exist: {samples_path}")
         sys.exit(1)
     
-    return files, output_folder
+    return files, output_folder, custom_labels
 
 
 def _compute_distances_to_barycenter(files, grid, barycenter_weights, freq_column, weights_column):
@@ -296,7 +312,7 @@ def main():
 
     # Get TSV files
     barycenter_files = sorted(barycenter_folder.glob("*.tsv"))
-    samples_files, _ = _load_sample_files(samples_path)
+    samples_files, _, custom_labels = _load_sample_files(samples_path)
 
     if not barycenter_files:
         print(f"Error: No TSV files found in {barycenter_folder}")
@@ -331,7 +347,8 @@ def main():
     results = []
     for sample_file, distance in zip(samples_files, sample_distances):
         pvalue = compute_pvalue(distance, model)
-        label = _label_from_filename(sample_file)
+        # Use custom label if provided, otherwise auto-generate
+        label = custom_labels.get(sample_file, _label_from_filename(sample_file))
         results.append({
             'filename': str(sample_file),
             'sample': label,
