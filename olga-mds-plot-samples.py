@@ -12,6 +12,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.path as mpath
 from sklearn.manifold import MDS
+from adjustText import adjust_text
 from ot_utils import (
     _label_from_filename,
     load_distribution,
@@ -349,6 +350,7 @@ def main():
         )
 
     # Plot samples (orange #F28E2B with labels)
+    texts = []
     for i in range(n_samples):
         file_idx = n_barycenter + i
         x, y = mds_coords[file_idx, 0], mds_coords[file_idx, 1]
@@ -359,7 +361,7 @@ def main():
         )
         # Add label - use custom if provided, otherwise auto-generate
         label = custom_labels.get(samples_files[i], _label_from_filename(samples_files[i]))
-        ax.text(
+        txt = ax.text(
             x, y + 0.04,
             label,
             ha='center', va='bottom',
@@ -367,6 +369,16 @@ def main():
             color='#000000',
             zorder=4
         )
+        texts.append(txt)
+
+    # Move labels only (no arrows/boxes) to avoid overlaps
+    adjust_text(
+        texts,
+        expand_points=(1.2, 1.2),
+        expand_text=(1.1, 1.1),
+        force_points=0.2,
+        force_text=0.3
+    )
 
     # Plot barycenter center (light green with 8-pointed star)
     barycenter_idx = n_barycenter + n_samples

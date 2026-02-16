@@ -9,6 +9,7 @@ import os
 from pathlib import Path
 import numpy as np
 import matplotlib.pyplot as plt
+from adjustText import adjust_text
 from ot_utils import (
     _label_from_filename,
     load_distribution,
@@ -216,10 +217,11 @@ def main():
             zorder=3
         )
 
+        texts = []
         for file_path, distance, offset in zip(mapped_files, mapped_distances, jitter):
             # Use custom label if provided, otherwise auto-generate
             label = custom_labels.get(file_path, _label_from_filename(file_path))
-            ax.text(
+            txt = ax.text(
                 1 + offset,
                 distance + 0.025,
                 label,
@@ -229,6 +231,16 @@ def main():
                 va="bottom",
                 zorder=4
             )
+            texts.append(txt)
+
+        # Move labels only (no arrows/boxes) to avoid overlaps
+        adjust_text(
+            texts,
+            expand_points=(1.2, 1.2),
+            expand_text=(1.1, 1.1),
+            force_points=0.2,
+            force_text=0.3
+        )
 
         ax.set_xlim(0.5, 1.5)
         ax.set_xticks([1])
