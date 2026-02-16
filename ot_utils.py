@@ -82,7 +82,7 @@ def _find_column_index(df, column_spec, param_name):
         )
 
 
-def load_distribution(filepath, freq_column="pgen", weights_column="off"):
+def load_distribution(filepath, freq_column="pgen", weights_column="duplicate_frequency_percent"):
     """
     Load a TCR distribution from a TSV file.
     

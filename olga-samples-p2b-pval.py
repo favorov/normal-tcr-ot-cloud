@@ -271,7 +271,7 @@ def main():
         print("                          - Folder with TSV files to evaluate")
         print("                          - Text file with one TSV file path per line")
         print("  --freq-column <col>   : Column index or name for frequencies (default: pgen)")
-        print("  --weights-column <col>: Column index or name for weights, or 'off' (default: off)")
+        print("  --weights-column <col>: Column index or name for weights, or 'off' (default: duplicate_frequency_percent)")
         print("  --barycenter <file>   : Barycenter file (default: barycenter.npz)")
         print("\nOutput:")
         print("  Table with sample names, distances, and p-values")
@@ -287,7 +287,7 @@ def main():
     samples_path = Path(sys.argv[2])
 
     freq_column = "pgen"
-    weights_column = "off"
+    weights_column = "duplicate_frequency_percent"
     barycenter_file = "barycenter.npz"
 
     i = 3

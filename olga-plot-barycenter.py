@@ -141,7 +141,7 @@ def main():
         print("  input_folder        : Path to folder containing TSV files")
         print("  --barycenter <file> : Path to barycenter NPZ file (default: barycenter.npz in input_folder)")
         print("  --freq-column       : Column for frequencies (default: pgen)")
-        print("  --weights-column    : Column for weights (default: off)")
+        print("  --weights-column    : Column for weights (default: duplicate_frequency_percent)")
         print("  --output-plot <file>: Output plot filename (default: barycenter_plot.png)")
         print("\nExamples:")
         print("  python olga-plot-barycenter.py input/test-cloud-Tumeh2014")
@@ -152,7 +152,7 @@ def main():
     input_folder = sys.argv[1]
     barycenter_file = "barycenter.npz"
     freq_column = "pgen"
-    weights_column = "off"
+    weights_column = "duplicate_frequency_percent"
     output_plot = "barycenter_plot.png"
     
     # Parse remaining arguments

@@ -24,7 +24,7 @@ def main():
         print("  input_folder         : Path to folder containing TSV files and barycenter.npz")
         print("  file.tsv             : (Optional) Specific TSV file to compare. If omitted, processes all .tsv files")
         print("  --freq-column <col>  : Column index or name for frequencies (default: pgen)")
-        print("  --weights-column <col> : Column index or name for weights, or 'off' (default: off)")
+        print("  --weights-column <col> : Column index or name for weights, or 'off' (default: duplicate_frequency_percent)")
         print("  --barycenter <file>  : Custom barycenter file (default: barycenter.npz)")
         print("  --all                : Explicitly process all files (same as providing no file)")
         print("  --pipeline           : Output only distance value(s) (for use in scripts/pipelines)")
@@ -48,7 +48,7 @@ def main():
     
     # Defaults
     freq_column = "pgen"
-    weights_column = "off"
+    weights_column = "duplicate_frequency_percent"
     barycenter_file = "barycenter.npz"
     single_file = None
     batch_mode = False

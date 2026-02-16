@@ -245,7 +245,7 @@ def main():
         print()
         print("Parameters:")
         print("  --freq-column <col>    : Column index or name for frequencies (default: pgen)")
-        print("  --weights-column <col> : Column index or name for weights, or 'off' (default: off)")
+        print("  --weights-column <col> : Column index or name for weights, or 'off' (default: duplicate_frequency_percent)")
         print("  --n-grid <n>           : Number of grid points (default: 200)")
         print("  --all                  : Enable batch mode (one-to-all or all-pairs)")
         print("  --pipeline             : Output only distances, one per line (for scripting)")
@@ -261,7 +261,7 @@ def main():
     
     input_folder = sys.argv[1]
     freq_column = "pgen"
-    weights_column = "off"
+    weights_column = "duplicate_frequency_percent"
     n_grid = 200
     pipeline_mode = False
     all_mode = False

@@ -98,7 +98,7 @@ def main():
         print("\nParameters:")
         print("  input_folder      : Path to folder containing TSV files")
         print("  --freq-column     : Column index (0-based) or column name for sample values (default: pgen)")
-        print("  --weights-column  : Column index (0-based) or column name for weights, or 'off' (default: off)")
+        print("  --weights-column  : Column index (0-based) or column name for weights, or 'off' (default: duplicate_frequency_percent)")
         print("  --n-grid          : Number of grid points (default: 200)")
         print("  --barycenter      : Output filename for barycenter (default: barycenter.npz)")
         print("\nExamples:")
@@ -110,7 +110,7 @@ def main():
     
     input_folder = sys.argv[1]
     freq_column = "pgen"
-    weights_column = "off"
+    weights_column = "duplicate_frequency_percent"
     n_grid = 200
     barycenter_file = "barycenter.npz"
     

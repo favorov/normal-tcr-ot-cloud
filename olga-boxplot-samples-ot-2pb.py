@@ -116,7 +116,7 @@ def main():
         print("                          - Folder with TSV files to map")
         print("                          - Text file with one TSV file path per line")
         print("  --freq-column <col>   : Column index or name for frequencies (default: pgen)")
-        print("  --weights-column <col>: Column index or name for weights, or 'off' (default: off)")
+        print("  --weights-column <col>: Column index or name for weights, or 'off' (default: duplicate_frequency_percent)")
         print("  --barycenter <file>   : Barycenter file (default: barycenter.npz)")
         print("  --output-plot <file>  : Output plot filename (default: ot-distance-boxplot.png)")
         print("\nOutput:")
@@ -131,7 +131,7 @@ def main():
     samples_path = Path(sys.argv[2])
 
     freq_column = "pgen"
-    weights_column = "off"
+    weights_column = "duplicate_frequency_percent"
     barycenter_file = "barycenter.npz"
     output_plot = "ot-distance-boxplot.png"
 

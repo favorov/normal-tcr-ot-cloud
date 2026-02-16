@@ -41,7 +41,7 @@ python3 olga-barycenter-ot.py <input_folder> [options]
 ### Parameters
 
 - `--freq-column <col>` — frequencies column (default: pgen)
-- `--weights-column <col>` — weights column or 'off' (default: off)
+- `--weights-column <col>` — weights column or 'off' (default: duplicate_frequency_percent)
 - `--n-grid <n>` — number of grid points (default: 200)
 - `--barycenter <file>` — output filename for barycenter (default: barycenter.npz)
 
@@ -80,7 +80,7 @@ python3 olga-plot-barycenter.py <input_folder> [options]
 
 - `--barycenter <file>` — path to barycenter (default: barycenter.npz in input_folder)
 - `--freq-column <col>` — default: pgen
-- `--weights-column <col>` — default: off
+- `--weights-column <col>` — default: duplicate_frequency_percent
 - `--output-plot <file>` — output image path (default: barycenter_plot.png in input_folder)
 
 ### Examples
@@ -122,7 +122,7 @@ python3 olga-p2p-ot.py <input_folder> --all
 ### Parameters
 
 - `--freq-column <col>` — default: pgen
-- `--weights-column <col>` — default: off
+- `--weights-column <col>` — default: duplicate_frequency_percent
 - `--n-grid <n>` — number of grid points (default: 200)
 - `--barycenter <file>` — use barycenter grid (default: barycenter.npz)
 - `--pipeline` — output only numbers (for scripts)
@@ -173,7 +173,7 @@ python3 olga-p2b-ot.py <input_folder> [--all] [options]
 ### Parameters
 
 - `--freq-column <col>` — default: pgen
-- `--weights-column <col>` — default: off
+- `--weights-column <col>` — default: duplicate_frequency_percent
 - `--barycenter <file>` — path to barycenter (default: barycenter.npz)
 - `--all` — process all TSV files
 - `--pipeline` — output numbers only
@@ -218,7 +218,7 @@ python3 olga-boxplot-samples-ot-2pb.py <barycenter_folder> <samples> [options]
 - `barycenter_folder` — folder with TSV files and barycenter.npz
 - `samples` — either a folder with samples to map or a text file with one TSV path per line
 - `--freq-column <col>` — default: pgen
-- `--weights-column <col>` — default: off
+- `--weights-column <col>` — default: duplicate_frequency_percent
 - `--barycenter <file>` — barycenter file (default: barycenter.npz)
 - `--output-plot <file>` — output plot filename (default: ot-distance-boxplot.png)
 
@@ -250,7 +250,7 @@ python3 olga-mds-plot-samples.py <barycenter_folder> <samples> [options]
 - `barycenter_folder` — folder with TSV files and barycenter.npz
 - `samples` — either a folder with samples to map or a text file with one TSV path per line
 - `--freq-column <col>` — default: pgen
-- `--weights-column <col>` — default: off
+- `--weights-column <col>` — default: duplicate_frequency_percent
 - `--barycenter <file>` — barycenter file (default: barycenter.npz)
 - `--output-plot <file>` — output plot filename (default: ot-mds-plot.png)
 
@@ -290,7 +290,7 @@ python3 olga-samples-p2b-pval.py <barycenter_folder> <samples> [options]
 - `barycenter_folder` — folder with TSV files and barycenter.npz
 - `samples` — either a folder with samples to evaluate or a text file with one TSV path per line
 - `--freq-column <col>` — default: pgen
-- `--weights-column <col>` — default: off
+- `--weights-column <col>` — default: duplicate_frequency_percent
 - `--barycenter <file>` — barycenter file (default: barycenter.npz)
 
 ### How it works

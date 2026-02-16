@@ -253,7 +253,7 @@ def main():
         print("                          - Folder with TSV files to map")
         print("                          - Text file with one TSV file path per line")
         print("  --freq-column <col>   : Column index or name for frequencies (default: pgen)")
-        print("  --weights-column <col>: Column index or name for weights, or 'off' (default: off)")
+        print("  --weights-column <col>: Column index or name for weights, or 'off' (default: duplicate_frequency_percent)")
         print("  --barycenter <file>   : Barycenter file (default: barycenter.npz)")
         print("  --output-plot <file>  : Output plot filename (default: ot-mds-plot.png)")
         print("\nOutput:")
@@ -269,7 +269,7 @@ def main():
     samples_path = Path(sys.argv[2])
 
     freq_column = "pgen"
-    weights_column = "off"
+    weights_column = "duplicate_frequency_percent"
     barycenter_file = "barycenter.npz"
     output_plot = "ot-mds-plot.png"
 
@@ -345,8 +345,8 @@ def main():
     for i in range(n_barycenter):
         ax.scatter(
             mds_coords[i, 0], mds_coords[i, 1],
-            c='#90EE90', s=80, alpha=0.7, edgecolors='#0B5D1E', linewidth=1.5,
-            zorder=2
+            c='#90EE90', s=80, alpha=0.7, edgecolors='#0B5D1E', linewidth=0.5,
+            zorder=4
         )
 
     # Plot samples (orange #F28E2B with labels)
