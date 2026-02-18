@@ -24,7 +24,8 @@ pip install numpy pandas pot matplotlib scikit-learn
 4. `olga-p2b-ot.py` — distances from distributions to barycenter
 5. `olga-boxplot-samples-ot-2pb.py` — compare sample distances with boxplot
 6. `olga-mds-plot-samples.py` — MDS visualization of samples vs barycenter
-7. `olga-samples-p2b-pval.py` — statistical significance of sample distances
+7. `olga-simple-ot-mds-plot.py` — simplified MDS visualization (no barycenter)
+8. `olga-samples-p2b-pval.py` — statistical significance of sample distances
 
 ---
 
@@ -272,6 +273,60 @@ python3 olga-mds-plot-samples.py input/test-cloud-Tumeh2014 samples_list.txt \
 ```
 
 **Output:** 2D MDS plot showing spatial relationships. Light green points = normal samples, orange points = mapped samples (labeled like 01B, 17P), 8-pointed green star = barycenter.
+
+---
+
+## olga-simple-ot-mds-plot.py
+
+Creates a simplified MDS visualization of sample distributions without requiring a barycenter reference.
+
+### Usage
+
+```bash
+python3 olga-simple-ot-mds-plot.py <samples> [options]
+```
+
+### Parameters
+
+- `samples` — either a folder with TSV files or a text file with one TSV path per line
+- `--freq-column <col>` — default: pgen
+- `--weights-column <col>` — default: duplicate_frequency_percent
+- `--output-plot <file>` — output plot filename (default: ot-simple-mds-plot.png)
+
+### How it works
+
+1. Loads samples from folder or text file list
+2. Computes all pairwise Wasserstein distances
+3. Applies MDS algorithm to reduce distances to 2D space
+4. Visualizes with automatic color-coding by source directory
+5. Adds semi-transparent points (α=0.6) to show overlaps
+
+### Examples
+
+```bash
+# From a folder
+python3 olga-simple-ot-mds-plot.py input/samples-folder
+
+# From a sample list with custom labels
+python3 olga-simple-ot-mds-plot.py input/samples-list.txt \
+    --output-plot comparison.png
+
+# With custom column names
+python3 olga-simple-ot-mds-plot.py input/samples-folder \
+    --freq-column my_frequency \
+    --weights-column my_weights
+```
+
+### Features
+
+- **Automatic directory coloring:** Points are color-coded by source directory (up to 20 colors)
+- **Transparent points:** Semi-transparent fill (α=0.6) with black edges for visibility
+- **Custom labels:** Supports custom labels from text file format: `path/file.tsv CustomLabel`
+- **Auto-generated labels:** If no custom label, generates from filename (e.g., Patient01_Base → 01Base)
+- **Legend:** Shows which color corresponds to which directory
+- **Label placement:** Uses adjustText to avoid label overlaps
+
+**Output:** 2D MDS plot with color-coded points (one color per directory) and descriptive labels.
 
 ---
 
@@ -528,8 +583,9 @@ All figures are sized 2x compared to standard plots for improved clarity and red
 
 ## Documentation
 
-Full development history: `archive/copilot-chat.md`  
-Technical architecture: `.copilot-context.md`
+Full development history: `HISTORY.md` (Русский)  
+Technical context and architecture: `CONTEXT.md`  
+Archive (earlier versions): `archive/copilot-chat.md`
 
 ## License
 
