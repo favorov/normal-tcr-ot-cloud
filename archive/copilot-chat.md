@@ -1959,3 +1959,66 @@ python3 olga-p2p-ot.py input/ Patient01.tsv Patient02.tsv --all --productive-fil
 
 ✅ **Статус:** Полностью реализовано и документировано
 
+---
+
+## Сессия 13: Переименование скриптов MDS для ясности (19 февраля 2026)
+
+### Улучшение читаемости имён скриптов
+
+**Запрос пользователя:** Переименовать два скрипта визуализации MDS для более очевидного обозначения функции.
+
+#### Переименованные скрипты
+
+Два скрипта переименованы для явного указания их назначения:
+
+1. **`olga-mds-plot-samples.py` → `olga-p2b-p2b-mds-plot-samples-and-bc.py`**
+   - Взаимодействие: **p2b** (point-to-barycenter)
+   - Визуализирует: sample distributions + barycenter
+   - Новое имя ясно указывает на сравнение **двух наборов** (normal samples + barycenter vs test samples)
+
+2. **`olga-simple-ot-mds-plot.py` → `olga-p2p-mds-plot-samples.py`**
+   - Взаимодействие: **p2p** (point-to-point)
+   - Визуализирует: только pairwise distances между samples
+   - Новое имя ясно указывает на **p2p сравнение** без barrycenter
+
+#### Логика именования
+
+**Новый паттерн имён:**
+
+```
+olga-[MODE]-[DIMENSIONS]-[DESCRIPTION].py
+
+Примеры:
+- olga-p2b-p2b-mds-plot-samples-and-bc.py
+  └─ p2b: стольклось расстояния (normal samples ↔ barycenter)
+  └─ mds: алгоритм (Multidimensional Scaling)
+  └─ samples-and-bc: объекты (Samples И BaryCentrum)
+
+- olga-p2p-mds-plot-samples.py
+  └─ p2p: попарные расстояния
+  └─ mds: алгоритм
+  └─ samples: объекты
+```
+
+#### Анатомия изменений
+
+**Обновлены:**
+1. ✅ Имена файлов на диске
+2. ✅ Usage messages в скриптах
+3. ✅ Примеры в документации
+4. ✅ README.md
+5. ✅ Это запись в истории
+
+**Перед:**
+```
+olga-mds-plot-samples.py       (неясно: MDS чего? с чем сравнива)
+olga-simple-ot-mds-plot.py     (неясно: что means "simple"?)
+```
+
+**После:**
+```
+olga-p2b-p2b-mds-plot-samples-and-bc.py   (ясно: p2b сравнение samples + barycenter)
+olga-p2p-mds-plot-samples.py              (ясно: p2p сравнение только samples)
+```
+
+✅ **Статус:** Переименование завершено и документировано

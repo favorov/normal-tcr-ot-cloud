@@ -200,7 +200,7 @@ def _compute_pairwise_distances(files, freq_column, weights_column, productive_f
 def main():
     """Main function."""
     if len(sys.argv) < 2 or sys.argv[1] in ["-h", "--help"]:
-        print("Usage: python olga-simple-ot-mds-plot.py <samples> [options]")
+        print("Usage: python olga-p2p-mds-plot-samples.py <samples> [options]")
         print("\nParameters:")
         print("  samples               : Either:")
         print("                          - Folder with TSV files")
@@ -213,8 +213,8 @@ def main():
         print("  MDS visualization with points color-coded by source directory")
         print("  Plot saved in samples folder (or parent folder if samples is a file list)")
         print("\nExamples:")
-        print("  python olga-simple-ot-mds-plot.py input/samples-folder")
-        print("  python olga-simple-ot-mds-plot.py samples_list.txt --output-plot mds.png")
+        print("  python olga-p2p-mds-plot-samples.py input/samples-folder")
+        print("  python olga-p2p-mds-plot-samples.py samples_list.txt --output-plot mds.png")
         sys.exit(1 if len(sys.argv) < 2 else 0)
 
     samples_path = Path(sys.argv[1])

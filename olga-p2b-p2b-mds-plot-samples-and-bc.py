@@ -260,22 +260,23 @@ def _compute_distances_to_barycenter(files, grid, barycenter_weights, freq_colum
 def main():
     """Main function."""
     if len(sys.argv) < 3 or sys.argv[1] in ["-h", "--help"]:
-        print("Usage: python olga-mds-plot-samples.py <barycenter_folder> <samples> [options]")
+        print("Usage: python olga-p2b-p2b-mds-plot-samples-and-bc.py <barycenter_folder> <samples> [options]")
         print("\nParameters:")
         print("  barycenter_folder     : Folder containing TSV files and barycenter.npz")
         print("  samples               : Either:")
         print("                          - Folder with TSV files to map")
         print("                          - Text file with one TSV file path per line")
-       print("  --freq-column <col>   : Column index or name for frequencies (default: pgen)")
+        print("  --freq-column <col>   : Column index or name for frequencies (default: pgen)")
         print("  --weights-column <col>: Column index or name for weights, or 'off' (default: duplicate_frequency_percent)")
         print("  --barycenter <file>   : Barycenter file (default: barycenter.npz)")
-        print("  --output-plot <file>  : Output plot filename (default: ot-mds-plot.png)")        print("  --productive-filter   : Filter only productive sequences (default: off)")        print("  --productive-filter   : Filter only productive sequences (default: off)")
+        print("  --output-plot <file>  : Output plot filename (default: ot-mds-plot.png)")
+        print("  --productive-filter   : Filter only productive sequences (default: off)")
         print("\nOutput:")
         print("  MDS visualization with light green (normal samples + barycenter) and orange (mapped samples)")
         print("  Plot saved in samples folder (or parent folder if samples is a file list)")
         print("\nExamples:")
-        print("  python olga-mds-plot-samples.py input/test-cloud-Tumeh2014 input/new-samples")
-        print("  python olga-mds-plot-samples.py input/test-cloud-Tumeh2014 samples_list.txt \\")
+        print("  python olga-p2b-p2b-mds-plot-samples-and-bc.py input/test-cloud-Tumeh2014 input/new-samples")
+        print("  python olga-p2b-p2b-mds-plot-samples-and-bc.py input/test-cloud-Tumeh2014 samples_list.txt \\")
         print("    --weights-column duplicate_frequency_percent --output-plot mds_comparison.png")
         sys.exit(1 if len(sys.argv) < 3 else 0)
 

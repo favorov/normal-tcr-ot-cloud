@@ -23,8 +23,8 @@ pip install numpy pandas pot matplotlib scikit-learn
 3. `olga-p2p-ot.py` — pairwise distances between distributions
 4. `olga-p2b-ot.py` — distances from distributions to barycenter
 5. `olga-boxplot-samples-ot-2pb.py` — compare sample distances with boxplot
-6. `olga-mds-plot-samples.py` — MDS visualization of samples vs barycenter
-7. `olga-simple-ot-mds-plot.py` — simplified MDS visualization (no barycenter)
+6. `olga-p2b-p2b-mds-plot-samples-and-bc.py` — MDS visualization of samples vs barycenter
+7. `olga-p2p-mds-plot-samples.py` — simplified MDS visualization (no barycenter)
 8. `olga-samples-p2b-pval.py` — statistical significance of sample distances
 
 ---
@@ -241,14 +241,14 @@ python3 olga-boxplot-samples-ot-2pb.py input/test-cloud-Tumeh2014 samples_list.t
 
 ---
 
-## olga-mds-plot-samples.py
+## olga-p2b-p2b-mds-plot-samples-and-bc.py
 
 Creates an MDS visualization showing relationships between samples and a barycenter.
 
 ### Usage
 
 ```bash
-python3 olga-mds-plot-samples.py <barycenter_folder> <samples> [options]
+python3 olga-p2b-p2b-mds-plot-samples-and-bc.py <barycenter_folder> <samples> [options]
 ```
 
 ### Parameters
@@ -272,9 +272,9 @@ python3 olga-mds-plot-samples.py <barycenter_folder> <samples> [options]
 ### Examples
 
 ```bash
-python3 olga-mds-plot-samples.py input/test-cloud-Tumeh2014 input/new-samples
+python3 olga-p2b-p2b-mds-plot-samples-and-bc.py input/test-cloud-Tumeh2014 input/new-samples
 
-python3 olga-mds-plot-samples.py input/test-cloud-Tumeh2014 samples_list.txt \
+python3 olga-p2b-p2b-mds-plot-samples-and-bc.py input/test-cloud-Tumeh2014 samples_list.txt \
     --weights-column duplicate_frequency_percent --output-plot mds_analysis.png
 ```
 
@@ -282,14 +282,14 @@ python3 olga-mds-plot-samples.py input/test-cloud-Tumeh2014 samples_list.txt \
 
 ---
 
-## olga-simple-ot-mds-plot.py
+## olga-p2p-mds-plot-samples.py
 
 Creates a simplified MDS visualization of sample distributions without requiring a barycenter reference.
 
 ### Usage
 
 ```bash
-python3 olga-simple-ot-mds-plot.py <samples> [options]
+python3 olga-p2p-mds-plot-samples.py <samples> [options]
 ```
 
 ### Parameters
@@ -312,14 +312,14 @@ python3 olga-simple-ot-mds-plot.py <samples> [options]
 
 ```bash
 # From a folder
-python3 olga-simple-ot-mds-plot.py input/samples-folder
+python3 olga-p2p-mds-plot-samples.py input/samples-folder
 
 # From a sample list with custom labels
-python3 olga-simple-ot-mds-plot.py input/samples-list.txt \
+python3 olga-p2p-mds-plot-samples.py input/samples-list.txt \
     --output-plot comparison.png
 
 # With custom column names
-python3 olga-simple-ot-mds-plot.py input/samples-folder \
+python3 olga-p2p-mds-plot-samples.py input/samples-folder \
     --freq-column my_frequency \
     --weights-column my_weights
 ```
@@ -474,7 +474,7 @@ EOF
 
 # Use in any visualization/analysis script
 python3 olga-boxplot-samples-ot-2pb.py input/test-cloud-Tumeh2014 my_samples.txt
-python3 olga-mds-plot-samples.py input/test-cloud-Tumeh2014 my_samples.txt
+python3 olga-p2b-p2b-mds-plot-samples-and-bc.py input/test-cloud-Tumeh2014 my_samples.txt
 python3 olga-samples-p2b-pval.py input/test-cloud-Tumeh2014 my_samples.txt
 ```
 
