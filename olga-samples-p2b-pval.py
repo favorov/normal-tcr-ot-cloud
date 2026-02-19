@@ -82,7 +82,7 @@ def _load_sample_files(samples_path):
     return files, output_folder, custom_labels
 
 
-def _compute_distances_to_barycenter(files, grid, barycenter_weights, freq_column, weights_column):
+def _compute_distances_to_barycenter(files, grid, barycenter_weights, freq_column, weights_column, productive_filter):
     """
     Compute distances from multiple samples to barycenter.
     
@@ -98,6 +98,8 @@ def _compute_distances_to_barycenter(files, grid, barycenter_weights, freq_colum
         Frequency column name/index
     weights_column : str
         Weights column name/index
+    productive_filter : bool
+        Filter only productive sequences
         
     Returns
     -------
@@ -116,7 +118,8 @@ def _compute_distances_to_barycenter(files, grid, barycenter_weights, freq_colum
         values, weights = load_distribution(
             str(file_path),
             freq_column=freq_column,
-            weights_column=weights_column
+            weights_column=weights_column,
+            productive_filter=productive_filter
         )
         all_samples.append((values, weights))
         all_values.append(values)
@@ -273,6 +276,7 @@ def main():
         print("  --freq-column <col>   : Column index or name for frequencies (default: pgen)")
         print("  --weights-column <col>: Column index or name for weights, or 'off' (default: duplicate_frequency_percent)")
         print("  --barycenter <file>   : Barycenter file (default: barycenter.npz)")
+        print("  --productive-filter   : Filter only productive sequences (default: off)")
         print("\nOutput:")
         print("  Table with sample names, distances, and p-values")
         print("  Both raw and Bonferroni-adjusted p-values")
@@ -289,6 +293,7 @@ def main():
     freq_column = "pgen"
     weights_column = "duplicate_frequency_percent"
     barycenter_file = "barycenter.npz"
+    productive_filter = False
 
     i = 3
     while i < len(sys.argv):
@@ -302,6 +307,9 @@ def main():
         elif arg == "--barycenter" and i + 1 < len(sys.argv):
             barycenter_file = sys.argv[i + 1]
             i += 2
+        elif arg == "--productive-filter":
+            productive_filter = True
+            i += 1
         else:
             i += 1
 
@@ -327,7 +335,7 @@ def main():
     print("Computing distances for normal samples (barycenter files)...")
     barycenter_distances, extended_grid, extended_barycenter = _compute_distances_to_barycenter(
         barycenter_files, grid, barycenter_weights,
-        freq_column, weights_column
+        freq_column, weights_column, productive_filter
     )
 
     # Fit null hypothesis model
@@ -340,7 +348,7 @@ def main():
     print("Computing distances and p-values for sample files...")
     sample_distances, _, _ = _compute_distances_to_barycenter(
         samples_files, extended_grid, extended_barycenter,
-        freq_column, weights_column
+        freq_column, weights_column, productive_filter
     )
 
     # Compute p-values

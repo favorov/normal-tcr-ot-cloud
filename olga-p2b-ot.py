@@ -29,6 +29,7 @@ def main():
         print("  --all                : Explicitly process all files (same as providing no file)")
         print("  --pipeline           : Output only distance value(s) (for use in scripts/pipelines)")
         print("  --statistics-only    : Enable batch mode and show only statistics")
+        print("  --productive-filter  : Filter only productive sequences (if productive column exists)")
         print("\nExamples:")
         print("  # Single file")
         print("  python olga-p2b-ot.py input/test-cloud-Tumeh2014 Patient01_Base_tcr_pgen.tsv")
@@ -54,6 +55,7 @@ def main():
     batch_mode = False
     pipeline_mode = False
     statistics_only = False
+    productive_filter = False
     
     # Parse arguments
     i = 2
@@ -78,6 +80,9 @@ def main():
         elif arg == "--statistics-only":
             statistics_only = True
             batch_mode = True
+            i += 1
+        elif arg == "--productive-filter":
+            productive_filter = True
             i += 1
         elif arg.endswith('.tsv') and single_file is None:
             single_file = arg
@@ -141,7 +146,8 @@ def main():
             values, weights = load_distribution(
                 str(file_path),
                 freq_column=freq_column,
-                weights_column=weights_column
+                weights_column=weights_column,
+                productive_filter=productive_filter
             )
             
             # Extend grid if new data falls outside barycenter range

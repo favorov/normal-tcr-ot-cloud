@@ -45,6 +45,7 @@ python3 olga-barycenter-ot.py <input_folder> [options]
 - `--weights-column <col>` — weights column or 'off' (default: duplicate_frequency_percent)
 - `--n-grid <n>` — number of grid points (default: 200)
 - `--barycenter <file>` — output filename for barycenter (default: barycenter.npz)
+- `--productive-filter` — filter only productive sequences (if productive column exists)
 
 ### Examples
 
@@ -83,6 +84,7 @@ python3 olga-plot-barycenter.py <input_folder> [options]
 - `--freq-column <col>` — default: pgen
 - `--weights-column <col>` — default: duplicate_frequency_percent
 - `--output-plot <file>` — output image path (default: barycenter_plot.png in input_folder)
+- `--productive-filter` — filter only productive sequences (if productive column exists)
 
 ### Examples
 
@@ -128,6 +130,7 @@ python3 olga-p2p-ot.py <input_folder> --all
 - `--barycenter <file>` — use barycenter grid (default: barycenter.npz)
 - `--pipeline` — output only numbers (for scripts)
 - `--statistics-only` — show only statistics (no table)
+- `--productive-filter` — filter only productive sequences (if productive column exists)
 
 ### Examples
 
@@ -179,6 +182,7 @@ python3 olga-p2b-ot.py <input_folder> [--all] [options]
 - `--all` — process all TSV files
 - `--pipeline` — output numbers only
 - `--statistics-only` — show statistics only
+- `--productive-filter` — filter only productive sequences (if productive column exists)
 
 ### Examples
 
@@ -222,6 +226,7 @@ python3 olga-boxplot-samples-ot-2pb.py <barycenter_folder> <samples> [options]
 - `--weights-column <col>` — default: duplicate_frequency_percent
 - `--barycenter <file>` — barycenter file (default: barycenter.npz)
 - `--output-plot <file>` — output plot filename (default: ot-distance-boxplot.png)
+- `--productive-filter` — filter only productive sequences (if productive column exists)
 
 ### Examples
 
@@ -254,6 +259,7 @@ python3 olga-mds-plot-samples.py <barycenter_folder> <samples> [options]
 - `--weights-column <col>` — default: duplicate_frequency_percent
 - `--barycenter <file>` — barycenter file (default: barycenter.npz)
 - `--output-plot <file>` — output plot filename (default: ot-mds-plot.png)
+- `--productive-filter` — filter only productive sequences (if productive column exists)
 
 ### How it works
 
@@ -292,6 +298,7 @@ python3 olga-simple-ot-mds-plot.py <samples> [options]
 - `--freq-column <col>` — default: pgen
 - `--weights-column <col>` — default: duplicate_frequency_percent
 - `--output-plot <file>` — output plot filename (default: ot-simple-mds-plot.png)
+- `--productive-filter` — filter only productive sequences (if productive column exists)
 
 ### How it works
 
@@ -347,6 +354,7 @@ python3 olga-samples-p2b-pval.py <barycenter_folder> <samples> [options]
 - `--freq-column <col>` — default: pgen
 - `--weights-column <col>` — default: duplicate_frequency_percent
 - `--barycenter <file>` — barycenter file (default: barycenter.npz)
+- `--productive-filter` — filter only productive sequences (if productive column exists)
 
 ### How it works
 

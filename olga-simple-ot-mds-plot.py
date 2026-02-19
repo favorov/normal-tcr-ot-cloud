@@ -129,7 +129,7 @@ def _get_directory_colors(files):
     return colors, dir_to_color
 
 
-def _compute_pairwise_distances(files, freq_column, weights_column):
+def _compute_pairwise_distances(files, freq_column, weights_column, productive_filter):
     """
     Compute pairwise Wasserstein distances between samples.
     
@@ -141,6 +141,8 @@ def _compute_pairwise_distances(files, freq_column, weights_column):
         Frequency column name/index
     weights_column : str
         Weights column name/index
+    productive_filter : bool
+        If True, filter only productive sequences
         
     Returns
     -------
@@ -160,7 +162,8 @@ def _compute_pairwise_distances(files, freq_column, weights_column):
         values, weights = load_distribution(
             str(file_path),
             freq_column=freq_column,
-            weights_column=weights_column
+            weights_column=weights_column,
+            productive_filter=productive_filter
         )
         all_samples.append((values, weights))
         all_values.append(values)
@@ -205,6 +208,7 @@ def main():
         print("  --freq-column <col>   : Column index or name for frequencies (default: pgen)")
         print("  --weights-column <col>: Column index or name for weights, or 'off' (default: duplicate_frequency_percent)")
         print("  --output-plot <file>  : Output plot filename (default: ot-simple-mds-plot.png)")
+        print("  --productive-filter   : Filter only productive sequences (if productive column exists)")
         print("\nOutput:")
         print("  MDS visualization with points color-coded by source directory")
         print("  Plot saved in samples folder (or parent folder if samples is a file list)")
@@ -218,6 +222,7 @@ def main():
     freq_column = "pgen"
     weights_column = "duplicate_frequency_percent"
     output_plot = "ot-simple-p2p-mds-plot.png"
+    productive_filter = False
 
     i = 2
     while i < len(sys.argv):
@@ -231,6 +236,9 @@ def main():
         elif arg == "--output-plot" and i + 1 < len(sys.argv):
             output_plot = sys.argv[i + 1]
             i += 2
+        elif arg == "--productive-filter":
+            productive_filter = True
+            i += 1
         else:
             i += 1
 
@@ -246,7 +254,7 @@ def main():
     # Compute pairwise distances
     print("Computing pairwise distances...")
     distances, extended_grid = _compute_pairwise_distances(
-        samples_files, freq_column, weights_column
+        samples_files, freq_column, weights_column, productive_filter
     )
 
     # Apply MDS

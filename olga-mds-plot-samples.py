@@ -111,7 +111,7 @@ def _create_8pointed_star_marker():
     return mpath.Path(vertices, codes)
 
 
-def _compute_pairwise_distances(files, grid, barycenter_weights, freq_column, weights_column):
+def _compute_pairwise_distances(files, grid, barycenter_weights, freq_column, weights_column, productive_filter):
     """
     Compute pairwise Wasserstein distances between samples.
     
@@ -127,6 +127,12 @@ def _compute_pairwise_distances(files, grid, barycenter_weights, freq_column, we
         Frequency column name/index
     weights_column : str
         Weights column name/index
+    productive_filter : bool
+        Filter only productive sequences
+    productive_filter : bool
+        Filter only productive sequences
+    productive_filter : bool
+        Filter only productive sequences
         
     Returns
     -------
@@ -148,7 +154,8 @@ def _compute_pairwise_distances(files, grid, barycenter_weights, freq_column, we
         values, weights = load_distribution(
             str(file_path),
             freq_column=freq_column,
-            weights_column=weights_column
+            weights_column=weights_column,
+            productive_filter=productive_filter
         )
         all_samples.append((values, weights))
         all_values.append(values)
@@ -182,7 +189,7 @@ def _compute_pairwise_distances(files, grid, barycenter_weights, freq_column, we
     return distances, extended_grid, extended_barycenter
 
 
-def _compute_distances_to_barycenter(files, grid, barycenter_weights, freq_column, weights_column):
+def _compute_distances_to_barycenter(files, grid, barycenter_weights, freq_column, weights_column, productive_filter):
     """
     Compute distances from samples to barycenter.
     
@@ -198,6 +205,12 @@ def _compute_distances_to_barycenter(files, grid, barycenter_weights, freq_colum
         Frequency column name/index
     weights_column : str
         Weights column name/index
+    productive_filter : bool
+        Filter only productive sequences
+    productive_filter : bool
+        Filter only productive sequences
+    productive_filter : bool
+        Filter only productive sequences
         
     Returns
     -------
@@ -216,7 +229,8 @@ def _compute_distances_to_barycenter(files, grid, barycenter_weights, freq_colum
         values, weights = load_distribution(
             str(file_path),
             freq_column=freq_column,
-            weights_column=weights_column
+            weights_column=weights_column,
+            productive_filter=productive_filter
         )
         all_samples.append((values, weights))
         all_values.append(values)
@@ -252,10 +266,10 @@ def main():
         print("  samples               : Either:")
         print("                          - Folder with TSV files to map")
         print("                          - Text file with one TSV file path per line")
-        print("  --freq-column <col>   : Column index or name for frequencies (default: pgen)")
+       print("  --freq-column <col>   : Column index or name for frequencies (default: pgen)")
         print("  --weights-column <col>: Column index or name for weights, or 'off' (default: duplicate_frequency_percent)")
         print("  --barycenter <file>   : Barycenter file (default: barycenter.npz)")
-        print("  --output-plot <file>  : Output plot filename (default: ot-mds-plot.png)")
+        print("  --output-plot <file>  : Output plot filename (default: ot-mds-plot.png)")        print("  --productive-filter   : Filter only productive sequences (default: off)")        print("  --productive-filter   : Filter only productive sequences (default: off)")
         print("\nOutput:")
         print("  MDS visualization with light green (normal samples + barycenter) and orange (mapped samples)")
         print("  Plot saved in samples folder (or parent folder if samples is a file list)")
@@ -272,6 +286,8 @@ def main():
     weights_column = "duplicate_frequency_percent"
     barycenter_file = "barycenter.npz"
     output_plot = "ot-mds-plot.png"
+    productive_filter = False
+    productive_filter = False
 
     i = 3
     while i < len(sys.argv):
@@ -288,6 +304,9 @@ def main():
         elif arg == "--output-plot" and i + 1 < len(sys.argv):
             output_plot = sys.argv[i + 1]
             i += 2
+        elif arg == "--productive-filter":
+            productive_filter = True
+            i += 1
         else:
             i += 1
 
@@ -313,7 +332,7 @@ def main():
     all_files = barycenter_files + samples_files
     all_distances, extended_grid, extended_barycenter = _compute_pairwise_distances(
         all_files, grid, barycenter_weights,
-        freq_column, weights_column
+        freq_column, weights_column, productive_filter
     )
 
     # Add barycenter as a point (distance 0 to itself)
@@ -328,7 +347,7 @@ def main():
     # Distances to barycenter center point
     barycenter_dists, _, _ = _compute_distances_to_barycenter(
         all_files, extended_grid, extended_barycenter,
-        freq_column, weights_column
+        freq_column, weights_column, productive_filter
     )
     full_distances[n_barycenter + n_samples, :n_barycenter + n_samples] = barycenter_dists
     full_distances[:n_barycenter + n_samples, n_barycenter + n_samples] = barycenter_dists

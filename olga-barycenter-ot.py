@@ -49,7 +49,7 @@ def get_column_index(df, column_param):
     raise ValueError(f"Column '{column_param}' not found. Available columns: {list(df.columns)}")
 
 
-def load_distribution(filepath, freq_column, weights_column):
+def load_distribution(filepath, freq_column, weights_column, productive_filter=False):
     """
     Load TSV file and extract sample values and their weights.
     
@@ -61,12 +61,18 @@ def load_distribution(filepath, freq_column, weights_column):
         Column index or name for sample values
     weights_column : str or int
         Column index or name for weights, or "NO"/"off" to disable weights
+    productive_filter : bool
+        If True and 'productive' column exists, filter only productive sequences
     
     Returns:
     --------
     tuple: (sample_values, weights)
     """
     df = pd.read_csv(filepath, sep='\t')
+    
+    # Apply productive filter if requested and column exists
+    if productive_filter and 'productive' in df.columns:
+        df = df[df['productive'] == True].copy()
     
     # Get sample values
     freq_idx = get_column_index(df, freq_column)
@@ -94,13 +100,14 @@ def load_distribution(filepath, freq_column, weights_column):
 def main():
     """Main function."""
     if len(sys.argv) < 2:
-        print("Usage: python olga-barycenter-ot.py <input_folder> [--freq-column <col>] [--weights-column <col>] [--n-grid <n>] [--barycenter <file>]")
+        print("Usage: python olga-barycenter-ot.py <input_folder> [--freq-column <col>] [--weights-column <col>] [--n-grid <n>] [--barycenter <file>] [--productive-filter]")
         print("\nParameters:")
         print("  input_folder      : Path to folder containing TSV files")
         print("  --freq-column     : Column index (0-based) or column name for sample values (default: pgen)")
         print("  --weights-column  : Column index (0-based) or column name for weights, or 'off' (default: duplicate_frequency_percent)")
         print("  --n-grid          : Number of grid points (default: 200)")
         print("  --barycenter      : Output filename for barycenter (default: barycenter.npz)")
+        print("  --productive-filter: Filter only productive sequences (default: off)")
         print("\nExamples:")
         print("  python olga-barycenter-ot.py input/test-cloud-Tumeh2014")
         print("  python olga-barycenter-ot.py input/test-cloud-Tumeh2014 --freq-column pgen --weights-column duplicate_frequency_percent")
@@ -113,6 +120,7 @@ def main():
     weights_column = "duplicate_frequency_percent"
     n_grid = 200
     barycenter_file = "barycenter.npz"
+    productive_filter = False
     
     # Parse named arguments
     i = 2
@@ -136,6 +144,9 @@ def main():
         elif sys.argv[i] == "--barycenter" and i + 1 < len(sys.argv):
             barycenter_file = sys.argv[i + 1]
             i += 2
+        elif sys.argv[i] == "--productive-filter":
+            productive_filter = True
+            i += 1
         else:
             print(f"Error: Unknown argument '{sys.argv[i]}'")
             sys.exit(1)
@@ -159,7 +170,7 @@ def main():
         
         for filepath in tsv_files:
             filename = os.path.basename(filepath)
-            values, weights = load_distribution(filepath, freq_column, weights_column)
+            values, weights = load_distribution(filepath, freq_column, weights_column, productive_filter)
             all_values.append(values)
             all_weights.append(weights)
             print(f"  Loaded {filename}: {len(values)} samples")

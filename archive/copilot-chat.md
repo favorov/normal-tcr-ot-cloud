@@ -1825,3 +1825,137 @@ samples-Tumeh2014-all-e480c24/Patient01_Base_tcr_pgen.tsv  01Base
    - Обновлены ссылки
 
 ✅ **Результат:** Проект полностью документирован, готов к версии 2.0
+
+---
+
+## Сессия 12: Фильтр продуктивных последовательностей (19 февраля 2026)
+
+### Новая функция: --productive-filter
+
+**Запрос пользователя:** "Давай допишем во все скрипты, читающие файлы с pgen, параметр --productive-filter. Он булевский, по умолчанию пусть пока будет FALSE. Делает он, когда включён следующее. Если во входном файле нет колонки productive, то ничего не меняется. Если же такая колонка есть, то в распределении учитываются только стороки, где значение булевской колонки productive истинно. Этот параметр нужен во всех скриптах."
+
+#### Биологический контекст
+
+**Назначение:** Фильтрация TCR последовательностей для включения только функционально продуктивных (productive) последовательностей.
+
+**Фон:**
+- Колонка `productive` указывает, может ли TCR последовательность произвести функциональный TCR
+- Непродуктивные последовательности часто:
+  - Артефакты секвенирования
+  - Out-of-frame перестановки (сдвиг рамки считывания)
+  - Псевдогены
+  - Нефункциональные рекомбинации
+
+#### Реализация
+
+**Основной параметр:**
+```python
+--productive-filter  # Boolean flag, no value
+# Default: False (processes all sequences)
+```
+
+**Логика фильтрации (в ot_utils.py::load_distribution()):**
+```python
+def load_distribution(filepath, freq_column="pgen", 
+                     weights_column="duplicate_frequency_percent", 
+                     productive_filter=False):
+    df = pd.read_csv(filepath, sep='\t')
+    
+    # Apply productive filter if requested and column exists
+    if productive_filter and 'productive' in df.columns:
+        df = df[df['productive'] == True].copy()
+    
+    # Continue with frequency extraction...
+```
+
+**Graceful degradation:** Если колонка `productive` не существует, параметр игнорируется (no-op).
+
+#### Скрипты, получившие фильтр (9 скриптов)
+
+1. ✅ **ot_utils.py** — базовая функция `load_distribution()`
+2. ✅ **olga-barycenter-ot.py** — вычисление тяжести
+3. ✅ **olga-plot-barycenter.py** — визуализация тяжести
+4. ✅ **olga-p2p-ot.py** — попарные расстояния
+5. ✅ **olga-p2b-ot.py** — расстояния до тяжести
+6. ✅ **olga-boxplot-samples-ot-2pb.py** — boxplot расстояний
+7. ✅ **olga-mds-plot-samples.py** — MDS визуализация
+8. ✅ **olga-samples-p2b-pval.py** — статистическая значимость
+9. ✅ **olga-simple-ot-mds-plot.py** — упрощённая MDS
+
+#### Обновления для каждого скрипта
+
+**Для всех 9 скриптов:**
+
+1. **Usage message** — добавлено описание параметра
+   ```bash
+   --productive-filter   : Filter only productive sequences (if productive column exists)
+   ```
+
+2. **Инициализация параметра:**
+   ```python
+   productive_filter = False
+   ```
+
+3. **Парсинг аргументов:**
+   ```python
+   elif arg == "--productive-filter":
+       productive_filter = True
+       i += 1
+   ```
+
+4. **Передача в функции:**
+   - Обновлены сигнатуры функций `load_distribution()`, `_compute_distances_to_barycenter()`, `_compute_pairwise_distances()` и др.
+   - Добавлен параметр во все вызовы функций
+
+#### Примеры использования
+
+```bash
+# Барицентр только из продуктивных последовательностей
+python3 olga-barycenter-ot.py input/test-cloud-Tumeh2014 --productive-filter
+
+# Попарные расстояния с фильтром
+python3 olga-p2p-ot.py input/ Patient01.tsv Patient02.tsv --productive-filter
+
+# Расстояния до барицентра, только продуктивные
+python3 olga-p2b-ot.py input/ Patient01.tsv --productive-filter
+
+# MDS визуализация
+python3 olga-mds-plot-samples.py input/barycenter input/samples --productive-filter
+
+# Сравнение: все vs только продуктивные
+python3 olga-p2p-ot.py input/ Patient01.tsv Patient02.tsv --all
+python3 olga-p2p-ot.py input/ Patient01.tsv Patient02.tsv --all --productive-filter
+```
+
+#### Обновления входных данных
+
+**Файл `input/samples-list-2-formats.txt`:**
+
+Добавлены суффиксы к меткам:
+- Последовательность: `Label-[B/P]-[b/e]`
+- Примеры:
+  - `05Base` (bed55eb) → `05-B-b`
+  - `23Post` (e480c24) → `23-P-e`
+
+**Парсинг:**
+- `-B` / `-P` обозначает Base или Post
+- `-b` / `-e` обозначает историю (bed55eb или e480c24)
+
+#### Документация
+
+**Обновлены файлы документации:**
+
+1. ✅ **.copilot-context.md**
+   - Добавлена секция "Productive Sequence Filter"
+   - Описание логики и использования
+
+2. ✅ **README.md**
+   - Добавлен `--productive-filter` во все 9 скриптов (в разделы Parameters)
+   - Полная документация параметра
+
+3. ✅ **archive/copilot-chat.md** (этот файл)
+   - Запись сессии 12 (фильтр продуктивности)
+   - Полная история реализации
+
+✅ **Статус:** Полностью реализовано и документировано
+

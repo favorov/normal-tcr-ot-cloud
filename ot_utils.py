@@ -82,7 +82,7 @@ def _find_column_index(df, column_spec, param_name):
         )
 
 
-def load_distribution(filepath, freq_column="pgen", weights_column="duplicate_frequency_percent"):
+def load_distribution(filepath, freq_column="pgen", weights_column="duplicate_frequency_percent", productive_filter=False):
     """
     Load a TCR distribution from a TSV file.
     
@@ -96,6 +96,8 @@ def load_distribution(filepath, freq_column="pgen", weights_column="duplicate_fr
     weights_column : str or int
         Column name, substring, or index for weights, or 'off' for uniform weights.
         If string: tries exact match first, then substring match (must be unique).
+    productive_filter : bool
+        If True and 'productive' column exists, filter only productive sequences.
         
     Returns
     -------
@@ -110,6 +112,10 @@ def load_distribution(filepath, freq_column="pgen", weights_column="duplicate_fr
         If column specification is ambiguous or not found
     """
     df = pd.read_csv(filepath, sep='\t')
+    
+    # Apply productive filter if requested and column exists
+    if productive_filter and 'productive' in df.columns:
+        df = df[df['productive'] == True].copy()
     
     # Get frequency column
     freq_idx = _find_column_index(df, freq_column, 'freq_column')
