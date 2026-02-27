@@ -1,6 +1,26 @@
 #!/usr/bin/env bash
-mkdir -p ../samples_to_map/
-#grep OLGA_PGEN .nextflow.log | grep "status: COMPLETED;" | grep _Post | cut -d " " -f 15,23 | sed "s/]//; s/_Post);//; s/(//" | awk '{print "cp "$2"/"$1"_Post_tcr_pgen.tsv ../samples_to_map/"}' | bash
-find work/ -name "*pgen*" -and -name "*tsv" -and -name "Patient*" -exec cp {} ../samples_to_map/ \;
+mkdir -p ../olga/
+mkdir -p ../olga-unfiltered/
+
+copy_by_header_word_count() {
+	local filepath="$1"
+	local header_words
+
+	header_words=$(head -1 "$filepath" | wc -w | tr -d ' ')
+
+	if [[ "$header_words" == "6" ]]; then
+		cp "$filepath" ../olga/
+		echo "[$header_words] copied to ../olga: $filepath"
+	elif [[ "$header_words" == "23" ]]; then
+		cp "$filepath" ../olga-unfiltered/
+		echo "[$header_words] copied to ../olga-unfiltered: $filepath"
+	else
+		echo "[$header_words] skipped (no destination rule): $filepath"
+	fi
+}
+
+for filepath in `find work/ -name "*tcr_pgen*" -and -name "*tsv" -and -name "Patient*" -and -type f`; do
+	copy_by_header_word_count "$filepath"
+done
 
 
