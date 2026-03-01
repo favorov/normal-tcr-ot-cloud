@@ -46,6 +46,7 @@ python3 olga-barycenter-ot.py <input_folder> [options]
 - `--n-grid <n>` — number of grid points (default: 200)
 - `--barycenter <file>` — output filename for barycenter (default: barycenter.npz)
 - `--productive-filter` — filter only productive sequences (if productive column exists)
+- `--vdj-filter` — require non-empty `v_call`, `d_call`, `j_call` for columns that exist
 
 ### Examples
 
@@ -85,6 +86,7 @@ python3 olga-plot-barycenter.py <input_folder> [options]
 - `--weights-column <col>` — default: duplicate_frequency_percent
 - `--output-plot <file>` — output image path (default: barycenter_plot.png in input_folder)
 - `--productive-filter` — filter only productive sequences (if productive column exists)
+- `--vdj-filter` — require non-empty `v_call`, `d_call`, `j_call` for columns that exist
 
 ### Examples
 
@@ -128,6 +130,7 @@ Additional tokens (labels/metadata) are ignored.
 - `--pipeline` — output only numbers (for scripts)
 - `--statistics-only` — show only statistics (no table)
 - `--productive-filter` — filter only productive sequences (if productive column exists)
+- `--vdj-filter` — require non-empty `v_call`, `d_call`, `j_call` for columns that exist
 
 ### Examples
 
@@ -153,7 +156,8 @@ python3 olga-p2p-ot.py \
 ```
 
 **Output:**
-- Normal: table + statistics
+- Normal (single pair): distance + rows-after-filtering count for each input file
+- Normal (all-pairs): table + statistics
 - `--pipeline`: numbers only (one per line)
 - `--statistics-only`: Count, Mean, Median, Std, Min, Max, Q1, Q3
 
@@ -182,6 +186,7 @@ python3 olga-p2b-ot.py <input_folder> [--all] [options]
 - `--pipeline` — output numbers only
 - `--statistics-only` — show statistics only
 - `--productive-filter` — filter only productive sequences (if productive column exists)
+- `--vdj-filter` — require non-empty `v_call`, `d_call`, `j_call` for columns that exist
 
 ### Examples
 
@@ -226,6 +231,7 @@ python3 olga-boxplot-samples-ot-2pb.py <barycenter_folder> <samples> [options]
 - `--barycenter <file>` — barycenter file (default: barycenter.npz)
 - `--output-plot <file>` — output plot filename (default: ot-distance-boxplot.png)
 - `--productive-filter` — filter only productive sequences (if productive column exists)
+- `--vdj-filter` — require non-empty `v_call`, `d_call`, `j_call` for columns that exist
 
 ### Examples
 
@@ -259,6 +265,7 @@ python3 olga-p2b-p2b-mds-plot-samples-and-bc.py <barycenter_folder> <samples> [o
 - `--barycenter <file>` — barycenter file (default: barycenter.npz)
 - `--output-plot <file>` — output plot filename (default: ot-mds-plot.png)
 - `--productive-filter` — filter only productive sequences (if productive column exists)
+- `--vdj-filter` — require non-empty `v_call`, `d_call`, `j_call` for columns that exist
 
 ### How it works
 
@@ -298,6 +305,7 @@ python3 olga-p2p-mds-plot-samples.py <samples> [options]
 - `--weights-column <col>` — default: duplicate_frequency_percent
 - `--output-plot <file>` — output plot filename (default: ot-simple-mds-plot.png)
 - `--productive-filter` — filter only productive sequences (if productive column exists)
+- `--vdj-filter` — require non-empty `v_call`, `d_call`, `j_call` for columns that exist
 
 ### How it works
 
@@ -354,6 +362,7 @@ python3 olga-samples-p2b-pval.py <barycenter_folder> <samples> [options]
 - `--weights-column <col>` — default: duplicate_frequency_percent
 - `--barycenter <file>` — barycenter file (default: barycenter.npz)
 - `--productive-filter` — filter only productive sequences (if productive column exists)
+- `--vdj-filter` — require non-empty `v_call`, `d_call`, `j_call` for columns that exist
 
 ### How it works
 
