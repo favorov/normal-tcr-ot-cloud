@@ -1,11 +1,10 @@
 #!/usr/bin/env python3
 """
 Calculate Wasserstein distances between TCR distributions.
-Supports single pair, one-to-all, and all-pairs comparisons.
+Supports two-file comparison and all-pairs comparison from a file list.
 """
 
 import sys
-import os
 import numpy as np
 from pathlib import Path
 from itertools import combinations
@@ -13,40 +12,19 @@ from ot_utils import (
     load_distribution,
     compute_wasserstein_distance,
     discretize_distribution,
-    create_common_grid,
-    load_barycenter,
-    extend_grid_if_needed
+    create_common_grid
 )
 
 
-def compute_distance_single_pair(input_folder, file1, file2, freq_column, weights_column, n_grid, use_barycenter_grid=False, barycenter_file="barycenter.npz", productive_filter=False):
+def compute_distance_single_pair(file1, file2, freq_column, weights_column, n_grid, productive_filter=False):
     """Compute distance between two specific files."""
-    filepath1 = Path(input_folder) / file1
-    filepath2 = Path(input_folder) / file2
+    filepath1 = Path(file1)
+    filepath2 = Path(file2)
     
     values1, weights1 = load_distribution(str(filepath1), freq_column, weights_column, productive_filter)
     values2, weights2 = load_distribution(str(filepath2), freq_column, weights_column, productive_filter)
     
-    # Use barycenter grid if available for consistent comparison
-    if use_barycenter_grid:
-        # Determine barycenter path
-        if os.path.isabs(barycenter_file) or barycenter_file.startswith('~'):
-            barycenter_path = Path(os.path.expanduser(barycenter_file))
-        else:
-            barycenter_path = Path(input_folder) / barycenter_file
-        
-        if barycenter_path.exists():
-            grid, _ = load_barycenter(str(barycenter_path))
-            # Extend grid if data falls outside barycenter range
-            all_values = np.concatenate([values1, values2])
-            grid, _ = extend_grid_if_needed(
-                grid, np.zeros(len(grid)),
-                all_values.min(), all_values.max()
-            )
-        else:
-            grid = create_common_grid([values1, values2], n_grid=n_grid, log_space=True)
-    else:
-        grid = create_common_grid([values1, values2], n_grid=n_grid, log_space=True)
+    grid = create_common_grid([values1, values2], n_grid=n_grid, log_space=True)
     
     dist1 = discretize_distribution(values1, weights1, grid)
     dist2 = discretize_distribution(values2, weights2, grid)
@@ -61,133 +39,74 @@ def compute_distance_single_pair(input_folder, file1, file2, freq_column, weight
     return distance, file1, file2
 
 
-def compute_distance_one_to_all(input_folder, ref_file, freq_column, weights_column, n_grid, use_barycenter_grid=False, barycenter_file="barycenter.npz", productive_filter=False):
-    """Compute distances from one file to all others."""
-    input_path = Path(input_folder)
-    all_files = sorted(input_path.glob("*.tsv"))
-    
-    if not any(f.name == ref_file for f in all_files):
-        raise FileNotFoundError(f"Reference file not found: {ref_file}")
-    
-    # Load reference file once
-    ref_path = input_path / ref_file
-    ref_values, ref_weights = load_distribution(str(ref_path), freq_column, weights_column, productive_filter)
-    
-    # Determine grid
-    if use_barycenter_grid:
-        # Determine barycenter path
-        if os.path.isabs(barycenter_file) or barycenter_file.startswith('~'):
-            barycenter_path = Path(os.path.expanduser(barycenter_file))
-        else:
-            barycenter_path = input_path / barycenter_file
-        
-        if barycenter_path.exists():
-            grid, _ = load_barycenter(str(barycenter_path))
-            # Load all values to determine range for grid extension
-            all_values = [ref_values] + [load_distribution(str(f), freq_column, weights_column, productive_filter)[0] for f in all_files if f.name != ref_file]
-            all_values_combined = np.concatenate(all_values)
-            # Extend grid if data falls outside barycenter range
-            grid, _ = extend_grid_if_needed(
-                grid, np.zeros(len(grid)),
-                all_values_combined.min(), all_values_combined.max()
-            )
-        else:
-            # Create grid from reference and all other files
-            all_values = [ref_values] + [load_distribution(str(f), freq_column, weights_column, productive_filter)[0] for f in all_files if f.name != ref_file]
-            grid = create_common_grid(all_values, n_grid=n_grid, log_space=True)
-    else:
-        # Create common grid from reference and all others
-        all_values = [ref_values] + [load_distribution(str(f), freq_column, weights_column, productive_filter)[0] for f in all_files if f.name != ref_file]
-        grid = create_common_grid(all_values, n_grid=n_grid, log_space=True)
-    
-    results = []
-    
-    for other_file in all_files:
-        if other_file.name == ref_file:
-            continue
-        
-        other_path = input_path / other_file.name
-        other_values, other_weights = load_distribution(str(other_path), freq_column, weights_column, productive_filter)
-        
-        dist_ref = discretize_distribution(ref_values, ref_weights, grid)
-        dist_other = discretize_distribution(other_values, other_weights, grid)
-        
-        distance = compute_wasserstein_distance(
-            grid, dist_ref,
-            grid, dist_other,
-            metric='log_l1',
-            method='emd'
-        )
-        
-        results.append((ref_file, other_file.name, distance))
-    
-    return results
+def load_files_from_list(list_file):
+    """Load TSV file paths from a list file using first token of each non-empty line."""
+    list_path = Path(list_file)
+    if not list_path.exists():
+        raise FileNotFoundError(f"File list not found: {list_file}")
+
+    entries = []
+    with open(list_path, 'r', encoding='utf-8') as handle:
+        for line_number, raw_line in enumerate(handle, start=1):
+            line = raw_line.strip()
+            if not line or line.startswith('#'):
+                continue
+
+            first_token = line.split()[0]
+            file_path = Path(first_token).expanduser()
+            if not file_path.is_absolute():
+                file_path = list_path.parent / file_path
+
+            if not file_path.exists():
+                raise FileNotFoundError(
+                    f"Listed file not found at line {line_number}: {first_token}"
+                )
+
+            entries.append((first_token, str(file_path)))
+
+    if len(entries) < 2:
+        raise ValueError("Need at least 2 files in list for pairwise comparison")
+
+    return entries
 
 
-def compute_distance_all_pairs(input_folder, freq_column, weights_column, n_grid, use_barycenter_grid=False, barycenter_file="barycenter.npz", productive_filter=False):
-    """Compute distances for all pairs (upper triangle of distance matrix)."""
-    input_path = Path(input_folder)
-    all_files = sorted(input_path.glob("*.tsv"))
-    all_files = [f.name for f in all_files]
-    
-    if len(all_files) < 2:
-        raise ValueError("Need at least 2 TSV files for pairwise comparison")
-    
+def compute_distance_all_pairs(file_list, freq_column="pgen", weights_column="duplicate_frequency_percent", n_grid=200, productive_filter=False):
+    """Compute distances for all pairs from file list (upper triangle of distance matrix)."""
+    file_entries = load_files_from_list(file_list)
+
     # Pre-load all distributions
-    distributions = {}
-    for file in all_files:
+    distributions = []
+    for label, file_path in file_entries:
         values, weights = load_distribution(
-            str(input_path / file),
+            file_path,
             freq_column=freq_column,
             weights_column=weights_column,
             productive_filter=productive_filter
         )
-        distributions[file] = (values, weights)
-    
-    # Determine grid
-    if use_barycenter_grid:
-        # Determine barycenter path
-        if os.path.isabs(barycenter_file) or barycenter_file.startswith('~'):
-            barycenter_path = Path(os.path.expanduser(barycenter_file))
-        else:
-            barycenter_path = input_path / barycenter_file
-        
-        if barycenter_path.exists():
-            grid, _ = load_barycenter(str(barycenter_path))
-            # Find global range from all distributions
-            all_values = [v for v, w in distributions.values()]
-            all_values_combined = np.concatenate(all_values)
-            # Extend grid if data falls outside barycenter range
-            grid, _ = extend_grid_if_needed(
-                grid, np.zeros(len(grid)),
-                all_values_combined.min(), all_values_combined.max()
-            )
-        else:
-            all_values = [v for v, w in distributions.values()]
-            grid = create_common_grid(all_values, n_grid=n_grid, log_space=True)
-    else:
-        all_values = [v for v, w in distributions.values()]
-        grid = create_common_grid(all_values, n_grid=n_grid, log_space=True)
-    
+        distributions.append((label, values, weights))
+
+    all_values = [values for _, values, _ in distributions]
+    grid = create_common_grid(all_values, n_grid=n_grid, log_space=True)
+
     results = []
-    
+
     # Compute upper triangle (i < j)
-    for file1, file2 in combinations(all_files, 2):
-        values1, weights1 = distributions[file1]
-        values2, weights2 = distributions[file2]
-        
+    for left_index, right_index in combinations(range(len(distributions)), 2):
+        file1, values1, weights1 = distributions[left_index]
+        file2, values2, weights2 = distributions[right_index]
+
         dist1 = discretize_distribution(values1, weights1, grid)
         dist2 = discretize_distribution(values2, weights2, grid)
-        
+
         distance = compute_wasserstein_distance(
             grid, dist1,
             grid, dist2,
             metric='log_l1',
             method='emd'
         )
-        
+
         results.append((file1, file2, distance))
-    
+
     return results
 
 
@@ -233,49 +152,42 @@ def main():
     """Main function."""
     # Determine help condition more flexibly
     if len(sys.argv) < 2 or (len(sys.argv) == 2 and sys.argv[1] in ["-h", "--help"]):
-        print("Usage: python olga-p2p-ot.py <input_folder> [file1] [file2] [options]")
+        print("Usage: python olga-p2p-ot.py [file1.tsv] [file2.tsv] [options]")
         print("\nModes:")
-        print("  Two files:        python olga-p2p-ot.py <folder> <file1.tsv> <file2.tsv>")
+        print("  Two files:        python olga-p2p-ot.py <file1.tsv> <file2.tsv>")
         print("                    → Distance between two specific files")
         print()
-        print("  One-to-all:       python olga-p2p-ot.py <folder> <file.tsv> --all")
-        print("                    → Distances from one file to all others")
-        print()
-        print("  All-pairs:        python olga-p2p-ot.py <folder> --all")
-        print("                    → All pairwise distances (upper triangle)")
+        print("  All-pairs:        python olga-p2p-ot.py <files_list.txt> --all")
+        print("                    → All pairwise distances (upper triangle) from file list")
+        print("                    → In list file, only first token per line is used as filename")
         print()
         print("Parameters:")
         print("  --freq-column <col>    : Column index or name for frequencies (default: pgen)")
         print("  --weights-column <col> : Column index or name for weights, or 'off' (default: duplicate_frequency_percent)")
         print("  --n-grid <n>           : Number of grid points (default: 200)")
-        print("  --all                  : Enable batch mode (one-to-all or all-pairs)")
+        print("  --all                  : Enable all-pairs mode from file list")
         print("  --pipeline             : Output only distances, one per line (for scripting)")
-        print("  --statistics-only      : Enable batch mode and show only statistics")
-        print("  --barycenter <file>    : Use barycenter grid from file for consistent comparison with p2b (default: barycenter.npz)")
+        print("  --statistics-only      : Enable all-pairs mode and show only statistics")
         print("  --productive-filter    : Filter only productive sequences (if productive column exists)")
         print()
         print("Examples:")
-        print("  python olga-p2p-ot.py input/test-cloud-Tumeh2014 Patient01.tsv Patient02.tsv")
-        print("  python olga-p2p-ot.py input/test-cloud-Tumeh2014 Patient01.tsv --all")
-        print("  python olga-p2p-ot.py input/test-cloud-Tumeh2014 --all")
-        print("  python olga-p2p-ot.py input/test-cloud-Tumeh2014 --all --pipeline")
+        print("  python olga-p2p-ot.py input/test-cloud-Tumeh2014/Patient01.tsv input/test-cloud-Tumeh2014/Patient02.tsv")
+        print("  python olga-p2p-ot.py input/samples-list-2-formats.txt --all")
+        print("  python olga-p2p-ot.py input/samples-list-2-formats.txt --all --statistics-only")
+        print("  python olga-p2p-ot.py input/samples-list-2-formats.txt --all --pipeline")
         sys.exit(1 if len(sys.argv) < 2 else 0)
     
-    input_folder = sys.argv[1]
     freq_column = "pgen"
     weights_column = "duplicate_frequency_percent"
     n_grid = 200
     pipeline_mode = False
     all_mode = False
     statistics_only = False
-    use_barycenter_grid = False
-    barycenter_file = "barycenter.npz"
     productive_filter = False
-    file1 = None
-    file2 = None
+    positional_args = []
     
     # Parse arguments
-    i = 2
+    i = 1
     while i < len(sys.argv):
         arg = sys.argv[i]
         
@@ -305,60 +217,46 @@ def main():
             statistics_only = True
             all_mode = True
             i += 1
-        elif arg == "--barycenter":
-            if i + 1 < len(sys.argv):
-                barycenter_file = sys.argv[i + 1]
-                use_barycenter_grid = True
-                i += 2
-            else:
-                print("Error: --barycenter requires a filename argument")
-                sys.exit(1)
         elif arg == "--productive-filter":
             productive_filter = True
             i += 1
-        elif arg.endswith('.tsv') and file1 is None:
-            file1 = arg
-            i += 1
-        elif arg.endswith('.tsv') and file2 is None:
-            file2 = arg
-            i += 1
-        else:
+        elif arg.startswith("--"):
             print(f"Error: Unknown argument '{arg}'")
             sys.exit(1)
+        else:
+            positional_args.append(arg)
+            i += 1
     
     try:
         # Determine mode and compute
         if all_mode:
-            if file1 is not None:
-                # One-to-all mode
-                if not pipeline_mode:
-                    print(f"Loading reference file: {file1}")
-                    print()
-                results = compute_distance_one_to_all(input_folder, file1, freq_column, weights_column, n_grid, use_barycenter_grid, barycenter_file, productive_filter)
-                if not pipeline_mode:
-                    if statistics_only:
-                        print_results_normal(results, f"STATISTICS FROM {file1} TO ALL OTHERS", statistics_only=True)
-                    else:
-                        print_results_normal(results, f"DISTANCES FROM {file1} TO ALL OTHERS")
+            if len(positional_args) != 1:
+                print("Error: All-pairs mode requires exactly one file list argument")
+                print("       Example: python olga-p2p-ot.py input/samples-list.txt --all")
+                sys.exit(1)
+
+            files_list = positional_args[0]
+            if not pipeline_mode:
+                print(f"Computing all-pairs distances from file list: {files_list}")
+                print()
+            results = compute_distance_all_pairs(files_list, freq_column, weights_column, n_grid, productive_filter)
+            if not pipeline_mode:
+                if statistics_only:
+                    print_results_normal(results, "ALL PAIRWISE WASSERSTEIN DISTANCES - STATISTICS", statistics_only=True)
                 else:
-                    print_results_pipeline(results)
+                    print_results_normal(results, "ALL PAIRWISE WASSERSTEIN DISTANCES")
             else:
-                # All-pairs mode
-                if not pipeline_mode:
-                    print(f"Computing all-pairs distances...")
-                    print()
-                results = compute_distance_all_pairs(input_folder, freq_column, weights_column, n_grid, use_barycenter_grid, barycenter_file, productive_filter)
-                if not pipeline_mode:
-                    if statistics_only:
-                        print_results_normal(results, "ALL PAIRWISE WASSERSTEIN DISTANCES - STATISTICS", statistics_only=True)
-                    else:
-                        print_results_normal(results, "ALL PAIRWISE WASSERSTEIN DISTANCES")
-                else:
-                    print_results_pipeline(results)
+                print_results_pipeline(results)
         else:
             # Single pair mode
-            if file1 is None or file2 is None:
-                print("Error: Two files required for single comparison, or use --all for batch mode")
+            if len(positional_args) != 2:
+                print("Error: Single-pair mode requires exactly two TSV files")
+                print("       Example: python olga-p2p-ot.py file1.tsv file2.tsv")
+                sys.exit(1)
+
+            file1, file2 = positional_args
+            if not file1.endswith('.tsv') or not file2.endswith('.tsv'):
+                print("Error: Single-pair mode requires two .tsv files")
                 sys.exit(1)
             
             if not pipeline_mode:
@@ -368,8 +266,8 @@ def main():
                 print()
             
             distance, f1, f2 = compute_distance_single_pair(
-                input_folder, file1, file2,
-                freq_column, weights_column, n_grid, use_barycenter_grid, barycenter_file,
+                file1, file2,
+                freq_column, weights_column, n_grid,
                 productive_filter
             )
             

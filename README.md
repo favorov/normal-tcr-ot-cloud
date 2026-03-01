@@ -105,29 +105,26 @@ python3 olga-plot-barycenter.py input/test-cloud-Tumeh2014 \
 
 Computes Wasserstein distances between distributions.
 
-### Three modes of operation
+### Two modes of operation
 
 **1. Single pair — distance between two files**
 ```bash
-python3 olga-p2p-ot.py <input_folder> <file1.tsv> <file2.tsv>
+python3 olga-p2p-ot.py <file1.tsv> <file2.tsv>
 ```
 
-**2. One-to-all — from one file to all others**
+**2. All-pairs — all pairwise distances from list file (upper triangle)**
 ```bash
-python3 olga-p2p-ot.py <input_folder> <file1.tsv> --all
+python3 olga-p2p-ot.py <files_list.txt> --all
 ```
 
-**3. All-pairs — all pairwise distances (upper triangle)**
-```bash
-python3 olga-p2p-ot.py <input_folder> --all
-```
+Only the first token of each non-empty line in the list file is treated as file path.
+Additional tokens (labels/metadata) are ignored.
 
 ### Parameters
 
 - `--freq-column <col>` — default: pgen
 - `--weights-column <col>` — default: duplicate_frequency_percent
 - `--n-grid <n>` — number of grid points (default: 200)
-- `--barycenter <file>` — use barycenter grid (default: barycenter.npz)
 - `--pipeline` — output only numbers (for scripts)
 - `--statistics-only` — show only statistics (no table)
 - `--productive-filter` — filter only productive sequences (if productive column exists)
@@ -136,21 +133,23 @@ python3 olga-p2p-ot.py <input_folder> --all
 
 ```bash
 # Single pair
-python3 olga-p2p-ot.py input/test-cloud-Tumeh2014 \
-    Patient01_Base_tcr_pgen.tsv Patient02_Base_tcr_pgen.tsv
+python3 olga-p2p-ot.py \
+    input/test-cloud-Tumeh2014/Patient01_Base_tcr_pgen.tsv \
+    input/test-cloud-Tumeh2014/Patient02_Base_tcr_pgen.tsv
 
-# One-to-all with weights
-python3 olga-p2p-ot.py input/test-cloud-Tumeh2014 \
-    Patient01_Base_tcr_pgen.tsv --all \
+# All-pairs from file list (2-column list is supported; only column 1 is used)
+python3 olga-p2p-ot.py \
+    input/samples-list-2-formats.txt --all \
     --weights-column duplicate_frequency_percent
 
-# All-pairs with barycenter grid (for consistency with p2b)
-python3 olga-p2p-ot.py input/test-cloud-Tumeh2014 \
-    --all --barycenter barycenter.npz --statistics-only
+# All-pairs statistics from file list
+python3 olga-p2p-ot.py \
+    input/samples-list-2-formats.txt --all --statistics-only
 
 # Pipeline mode (numbers only)
-python3 olga-p2p-ot.py input/test-cloud-Tumeh2014 \
-    Patient01_Base_tcr_pgen.tsv Patient02_Base_tcr_pgen.tsv --pipeline
+python3 olga-p2p-ot.py \
+    input/test-cloud-Tumeh2014/Patient01_Base_tcr_pgen.tsv \
+    input/test-cloud-Tumeh2014/Patient02_Base_tcr_pgen.tsv --pipeline
 ```
 
 **Output:**
@@ -503,10 +502,9 @@ python3 olga-p2b-ot.py input/test-cloud-Tumeh2014 \
 ### 2. Pairwise comparisons
 
 ```bash
-# All pairs with consistent grid
-python3 olga-p2p-ot.py input/test-cloud-Tumeh2014 \
-    --all --barycenter barycenter.npz \
-    --weights-column duplicate_frequency_percent --statistics-only
+# All pairs from list (first token per line is filename)
+python3 olga-p2p-ot.py input/samples-list-2-formats.txt \
+    --weights-column duplicate_frequency_percent --all --statistics-only
 ```
 
 ### 3. Leave-one-out validation

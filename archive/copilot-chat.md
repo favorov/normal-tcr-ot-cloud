@@ -1961,6 +1961,45 @@ python3 olga-p2p-ot.py input/ Patient01.tsv Patient02.tsv --all --productive-fil
 
 ---
 
+## Session 13 — p2p simplification (2026-02-28)
+
+**Запрос пользователя:** упростить `olga-p2p-ot.py` как чистый инструмент попарных расстояний, без зависимости от барицентра и без обязательного `input_folder`.
+
+**Что изменено:**
+
+1. Удалён позиционный аргумент `input_folder` из CLI `olga-p2p-ot.py`.
+2. Удалена поддержка `--barycenter` и связанная логика сетки.
+3. Текущий интерфейс `olga-p2p-ot.py`:
+   - Single pair: `python3 olga-p2p-ot.py <file1.tsv> <file2.tsv>`
+   - One-to-all: `python3 olga-p2p-ot.py <file.tsv> --all`
+   - All-pairs: `python3 olga-p2p-ot.py --all` (в текущей директории)
+
+**Контекстная пометка:**
+- Старые записи в этом файле, где `olga-p2p-ot.py` использует `--barycenter` или `<input_folder>`, считаются историческими и не отражают текущий интерфейс.
+
+---
+
+## Session 14 — p2p mode reduction (2026-03-01)
+
+**Запрос пользователя:** оставить в `olga-p2p-ot.py` только 2 режима: пара `.tsv` файлов или `--all` по списку файлов.
+
+**Что изменено:**
+
+1. Удалён режим one-to-all из `olga-p2p-ot.py`.
+2. Режимы теперь:
+   - Single pair: `python3 olga-p2p-ot.py <file1.tsv> <file2.tsv>`
+   - All-pairs: `python3 olga-p2p-ot.py <files_list.txt> --all`
+3. Для `--all` читается только первый токен каждой непустой строки списка.
+   - Остальные токены/колонки игнорируются (например, метки во 2-й колонке).
+4. Ключи управления сохранены:
+   - `--all`, `--pipeline`, `--statistics-only`, `--productive-filter`
+   - `--freq-column`, `--weights-column`, `--n-grid`
+
+**Контекстная пометка:**
+- Формулировка “текущий интерфейс” в Session 13 устарела после этой сессии и заменена правилами Session 14.
+
+---
+
 ## Сессия 13: Переименование скриптов MDS для ясности (19 февраля 2026)
 
 ### Улучшение читаемости имён скриптов
