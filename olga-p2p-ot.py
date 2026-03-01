@@ -16,13 +16,13 @@ from ot_utils import (
 )
 
 
-def compute_distance_single_pair(file1, file2, freq_column, weights_column, n_grid, productive_filter=False):
+def compute_distance_single_pair(file1, file2, freq_column, weights_column, n_grid, productive_filter=False, vdj_filter=False):
     """Compute distance between two specific files."""
     filepath1 = Path(file1)
     filepath2 = Path(file2)
     
-    values1, weights1 = load_distribution(str(filepath1), freq_column, weights_column, productive_filter)
-    values2, weights2 = load_distribution(str(filepath2), freq_column, weights_column, productive_filter)
+    values1, weights1 = load_distribution(str(filepath1), freq_column, weights_column, productive_filter, vdj_filter)
+    values2, weights2 = load_distribution(str(filepath2), freq_column, weights_column, productive_filter, vdj_filter)
     
     grid = create_common_grid([values1, values2], n_grid=n_grid, log_space=True)
     
@@ -36,7 +36,7 @@ def compute_distance_single_pair(file1, file2, freq_column, weights_column, n_gr
         method='emd'
     )
     
-    return distance, file1, file2
+    return distance, file1, file2, len(values1), len(values2)
 
 
 def load_files_from_list(list_file):
@@ -70,7 +70,7 @@ def load_files_from_list(list_file):
     return entries
 
 
-def compute_distance_all_pairs(file_list, freq_column="pgen", weights_column="duplicate_frequency_percent", n_grid=200, productive_filter=False):
+def compute_distance_all_pairs(file_list, freq_column="pgen", weights_column="duplicate_frequency_percent", n_grid=200, productive_filter=False, vdj_filter=False):
     """Compute distances for all pairs from file list (upper triangle of distance matrix)."""
     file_entries = load_files_from_list(file_list)
 
@@ -81,7 +81,8 @@ def compute_distance_all_pairs(file_list, freq_column="pgen", weights_column="du
             file_path,
             freq_column=freq_column,
             weights_column=weights_column,
-            productive_filter=productive_filter
+            productive_filter=productive_filter,
+            vdj_filter=vdj_filter
         )
         distributions.append((label, values, weights))
 
@@ -169,6 +170,7 @@ def main():
         print("  --pipeline             : Output only distances, one per line (for scripting)")
         print("  --statistics-only      : Enable all-pairs mode and show only statistics")
         print("  --productive-filter    : Filter only productive sequences (if productive column exists)")
+        print("  --vdj-filter           : Require non-empty v_call/d_call/j_call for existing columns")
         print()
         print("Examples:")
         print("  python olga-p2p-ot.py input/test-cloud-Tumeh2014/Patient01.tsv input/test-cloud-Tumeh2014/Patient02.tsv")
@@ -184,6 +186,7 @@ def main():
     all_mode = False
     statistics_only = False
     productive_filter = False
+    vdj_filter = False
     positional_args = []
     
     # Parse arguments
@@ -220,6 +223,9 @@ def main():
         elif arg == "--productive-filter":
             productive_filter = True
             i += 1
+        elif arg == "--vdj-filter":
+            vdj_filter = True
+            i += 1
         elif arg.startswith("--"):
             print(f"Error: Unknown argument '{arg}'")
             sys.exit(1)
@@ -239,7 +245,7 @@ def main():
             if not pipeline_mode:
                 print(f"Computing all-pairs distances from file list: {files_list}")
                 print()
-            results = compute_distance_all_pairs(files_list, freq_column, weights_column, n_grid, productive_filter)
+            results = compute_distance_all_pairs(files_list, freq_column, weights_column, n_grid, productive_filter, vdj_filter)
             if not pipeline_mode:
                 if statistics_only:
                     print_results_normal(results, "ALL PAIRWISE WASSERSTEIN DISTANCES - STATISTICS", statistics_only=True)
@@ -265,10 +271,11 @@ def main():
                 print(f"  File 2: {file2}")
                 print()
             
-            distance, f1, f2 = compute_distance_single_pair(
+            distance, f1, f2, n_rows1, n_rows2 = compute_distance_single_pair(
                 file1, file2,
                 freq_column, weights_column, n_grid,
-                productive_filter
+                productive_filter,
+                vdj_filter
             )
             
             if pipeline_mode:
@@ -278,6 +285,9 @@ def main():
                 print("WASSERSTEIN DISTANCE")
                 print("=" * 60)
                 print(f"{file1} ↔ {file2}")
+                print("Rows after filtering:")
+                print(f"  {file1}: {n_rows1}")
+                print(f"  {file2}: {n_rows2}")
                 print(f"Distance: {distance:.10e}")
                 print("=" * 60)
     

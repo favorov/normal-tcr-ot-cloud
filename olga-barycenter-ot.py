@@ -49,7 +49,7 @@ def get_column_index(df, column_param):
     raise ValueError(f"Column '{column_param}' not found. Available columns: {list(df.columns)}")
 
 
-def load_distribution(filepath, freq_column, weights_column, productive_filter=False):
+def load_distribution(filepath, freq_column, weights_column, productive_filter=False, vdj_filter=False):
     """
     Load TSV file and extract sample values and their weights.
     
@@ -63,6 +63,8 @@ def load_distribution(filepath, freq_column, weights_column, productive_filter=F
         Column index or name for weights, or "NO"/"off" to disable weights
     productive_filter : bool
         If True and 'productive' column exists, filter only productive sequences
+    vdj_filter : bool
+        If True, require non-empty v_call/d_call/j_call for existing columns
     
     Returns:
     --------
@@ -73,10 +75,23 @@ def load_distribution(filepath, freq_column, weights_column, productive_filter=F
     # Apply productive filter if requested and column exists
     if productive_filter and 'productive' in df.columns:
         df = df[df['productive'] == True].copy()
+
+    # Apply VDJ filter if requested (for existing columns only)
+    if vdj_filter:
+        for vdj_col in ['v_call', 'd_call', 'j_call']:
+            if vdj_col in df.columns:
+                mask = df[vdj_col].notna() & (df[vdj_col].astype(str).str.strip() != "")
+                df = df[mask].copy()
     
     # Get sample values
     freq_idx = get_column_index(df, freq_column)
     sample_values = df.iloc[:, freq_idx].values.astype(float)
+
+    if len(sample_values) == 0:
+        raise ValueError(
+            f"No valid rows remaining after filtering for file '{filepath}'. "
+            "Check --productive-filter / --vdj-filter or input data."
+        )
     
     # Check if we should use weights
     use_weights = not is_no_weights(weights_column)
@@ -92,6 +107,8 @@ def load_distribution(filepath, freq_column, weights_column, productive_filter=F
         weights = np.ones(len(sample_values))
     
     # Normalize weights
+    if weights.sum() <= 0:
+        raise ValueError(f"Weights sum to zero after filtering for file '{filepath}'.")
     weights = weights / weights.sum()
     
     return sample_values, weights
@@ -100,7 +117,7 @@ def load_distribution(filepath, freq_column, weights_column, productive_filter=F
 def main():
     """Main function."""
     if len(sys.argv) < 2:
-        print("Usage: python olga-barycenter-ot.py <input_folder> [--freq-column <col>] [--weights-column <col>] [--n-grid <n>] [--barycenter <file>] [--productive-filter]")
+        print("Usage: python olga-barycenter-ot.py <input_folder> [--freq-column <col>] [--weights-column <col>] [--n-grid <n>] [--barycenter <file>] [--productive-filter] [--vdj-filter]")
         print("\nParameters:")
         print("  input_folder      : Path to folder containing TSV files")
         print("  --freq-column     : Column index (0-based) or column name for sample values (default: pgen)")
@@ -108,6 +125,7 @@ def main():
         print("  --n-grid          : Number of grid points (default: 200)")
         print("  --barycenter      : Output filename for barycenter (default: barycenter.npz)")
         print("  --productive-filter: Filter only productive sequences (default: off)")
+        print("  --vdj-filter      : Require non-empty v_call/d_call/j_call for existing columns")
         print("\nExamples:")
         print("  python olga-barycenter-ot.py input/test-cloud-Tumeh2014")
         print("  python olga-barycenter-ot.py input/test-cloud-Tumeh2014 --freq-column pgen --weights-column duplicate_frequency_percent")
@@ -121,6 +139,7 @@ def main():
     n_grid = 200
     barycenter_file = "barycenter.npz"
     productive_filter = False
+    vdj_filter = False
     
     # Parse named arguments
     i = 2
@@ -147,6 +166,9 @@ def main():
         elif sys.argv[i] == "--productive-filter":
             productive_filter = True
             i += 1
+        elif sys.argv[i] == "--vdj-filter":
+            vdj_filter = True
+            i += 1
         else:
             print(f"Error: Unknown argument '{sys.argv[i]}'")
             sys.exit(1)
@@ -170,7 +192,7 @@ def main():
         
         for filepath in tsv_files:
             filename = os.path.basename(filepath)
-            values, weights = load_distribution(filepath, freq_column, weights_column, productive_filter)
+            values, weights = load_distribution(filepath, freq_column, weights_column, productive_filter, vdj_filter)
             all_values.append(values)
             all_weights.append(weights)
             print(f"  Loaded {filename}: {len(values)} samples")

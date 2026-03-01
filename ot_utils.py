@@ -82,7 +82,13 @@ def _find_column_index(df, column_spec, param_name):
         )
 
 
-def load_distribution(filepath, freq_column="pgen", weights_column="duplicate_frequency_percent", productive_filter=False):
+def load_distribution(
+    filepath,
+    freq_column="pgen",
+    weights_column="duplicate_frequency_percent",
+    productive_filter=False,
+    vdj_filter=False,
+):
     """
     Load a TCR distribution from a TSV file.
     
@@ -98,6 +104,9 @@ def load_distribution(filepath, freq_column="pgen", weights_column="duplicate_fr
         If string: tries exact match first, then substring match (must be unique).
     productive_filter : bool
         If True and 'productive' column exists, filter only productive sequences.
+    vdj_filter : bool
+        If True, rows are kept only when each existing VDJ call column
+        ('v_call', 'd_call', 'j_call') is non-empty.
         
     Returns
     -------
@@ -116,6 +125,13 @@ def load_distribution(filepath, freq_column="pgen", weights_column="duplicate_fr
     # Apply productive filter if requested and column exists
     if productive_filter and 'productive' in df.columns:
         df = df[df['productive'] == True].copy()
+
+    # Apply VDJ filter if requested (for columns that exist)
+    if vdj_filter:
+        for vdj_col in ['v_call', 'd_call', 'j_call']:
+            if vdj_col in df.columns:
+                non_empty_mask = df[vdj_col].notna() & (df[vdj_col].astype(str).str.strip() != "")
+                df = df[non_empty_mask].copy()
     
     # Get frequency column
     freq_idx = _find_column_index(df, freq_column, 'freq_column')
@@ -124,6 +140,12 @@ def load_distribution(filepath, freq_column="pgen", weights_column="duplicate_fr
     # Filter positive values
     valid_mask = values > 0
     values = values[valid_mask]
+
+    if len(values) == 0:
+        raise ValueError(
+            f"No valid rows remaining after filtering for file '{filepath}'. "
+            "Check --productive-filter / --vdj-filter or input data."
+        )
     
     # Get weights
     if weights_column == "off":
@@ -131,6 +153,10 @@ def load_distribution(filepath, freq_column="pgen", weights_column="duplicate_fr
     else:
         weight_idx = _find_column_index(df, weights_column, 'weights_column')
         weights = df.iloc[:, weight_idx].values[valid_mask]
+        if weights.sum() <= 0:
+            raise ValueError(
+                f"Weights sum to zero after filtering for file '{filepath}'."
+            )
         weights = weights / weights.sum()
     
     return values, weights

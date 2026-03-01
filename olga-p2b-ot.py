@@ -30,6 +30,7 @@ def main():
         print("  --pipeline           : Output only distance value(s) (for use in scripts/pipelines)")
         print("  --statistics-only    : Enable batch mode and show only statistics")
         print("  --productive-filter  : Filter only productive sequences (if productive column exists)")
+        print("  --vdj-filter         : Require non-empty v_call/d_call/j_call for existing columns")
         print("\nExamples:")
         print("  # Single file")
         print("  python olga-p2b-ot.py input/test-cloud-Tumeh2014 Patient01_Base_tcr_pgen.tsv")
@@ -56,6 +57,7 @@ def main():
     pipeline_mode = False
     statistics_only = False
     productive_filter = False
+    vdj_filter = False
     
     # Parse arguments
     i = 2
@@ -83,6 +85,9 @@ def main():
             i += 1
         elif arg == "--productive-filter":
             productive_filter = True
+            i += 1
+        elif arg == "--vdj-filter":
+            vdj_filter = True
             i += 1
         elif arg.endswith('.tsv') and single_file is None:
             single_file = arg
@@ -147,7 +152,8 @@ def main():
                 str(file_path),
                 freq_column=freq_column,
                 weights_column=weights_column,
-                productive_filter=productive_filter
+                productive_filter=productive_filter,
+                vdj_filter=vdj_filter
             )
             
             # Extend grid if new data falls outside barycenter range
