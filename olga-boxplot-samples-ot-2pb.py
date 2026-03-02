@@ -83,7 +83,7 @@ def _load_sample_files(samples_path):
     return files, output_folder, custom_labels
 
 
-def _compute_distances_to_barycenter(files, grid, barycenter_weights, freq_column, weights_column, productive_filter, vdj_filter):
+def _compute_distances_to_barycenter(files, grid, barycenter_weights, freq_column, weights_column, productive_filter, vdj_filter, vj_filter):
     distances = []
     for file_path in files:
         values, weights = load_distribution(
@@ -91,7 +91,8 @@ def _compute_distances_to_barycenter(files, grid, barycenter_weights, freq_colum
             freq_column=freq_column,
             weights_column=weights_column,
             productive_filter=productive_filter,
-            vdj_filter=vdj_filter
+            vdj_filter=vdj_filter,
+            vj_filter=vj_filter
         )
         extended_grid, extended_barycenter = extend_grid_if_needed(
             grid, barycenter_weights,
@@ -123,6 +124,7 @@ def main():
         print("  --output-plot <file>  : Output plot filename (default: ot-distance-boxplot.png)")
         print("  --productive-filter   : Filter only productive sequences (default: off)")
         print("  --vdj-filter          : Require non-empty v_call/d_call/j_call for existing columns")
+        print("  --vj-filter           : Require non-empty v_call/j_call for existing columns")
         print("\nOutput:")
         print("  Plot saved in samples folder (or parent folder if samples is a file list)")
         print("\nExamples:")
@@ -140,6 +142,7 @@ def main():
     output_plot = "ot-distance-boxplot.png"
     productive_filter = False
     vdj_filter = False
+    vj_filter = False
 
     i = 3
     while i < len(sys.argv):
@@ -161,6 +164,9 @@ def main():
             i += 1
         elif arg == "--vdj-filter":
             vdj_filter = True
+            i += 1
+        elif arg == "--vj-filter":
+            vj_filter = True
             i += 1
         else:
             print(f"Error: Unknown argument '{arg}'")
@@ -191,7 +197,8 @@ def main():
             freq_column,
             weights_column,
             productive_filter,
-            vdj_filter
+            vdj_filter,
+            vj_filter
         )
         mapped_distances = _compute_distances_to_barycenter(
             mapped_files,
@@ -200,7 +207,8 @@ def main():
             freq_column,
             weights_column,
             productive_filter,
-            vdj_filter
+            vdj_filter,
+            vj_filter
         )
 
         fig, ax = plt.subplots(figsize=(16, 12))

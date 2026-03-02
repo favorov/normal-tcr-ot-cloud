@@ -49,7 +49,7 @@ def get_column_index(df, column_param):
     raise ValueError(f"Column '{column_param}' not found. Available columns: {list(df.columns)}")
 
 
-def load_distribution(filepath, freq_column, weights_column, productive_filter=False, vdj_filter=False):
+def load_distribution(filepath, freq_column, weights_column, productive_filter=False, vdj_filter=False, vj_filter=False):
     """
     Load TSV file and extract sample values and their weights.
     
@@ -65,6 +65,8 @@ def load_distribution(filepath, freq_column, weights_column, productive_filter=F
         If True and 'productive' column exists, filter only productive sequences
     vdj_filter : bool
         If True, require non-empty v_call/d_call/j_call for existing columns
+    vj_filter : bool
+        If True, require non-empty v_call/j_call for existing columns
     
     Returns:
     --------
@@ -82,6 +84,13 @@ def load_distribution(filepath, freq_column, weights_column, productive_filter=F
             if vdj_col in df.columns:
                 mask = df[vdj_col].notna() & (df[vdj_col].astype(str).str.strip() != "")
                 df = df[mask].copy()
+
+    # Apply VJ filter if requested (for existing columns only)
+    if vj_filter:
+        for vj_col in ['v_call', 'j_call']:
+            if vj_col in df.columns:
+                mask = df[vj_col].notna() & (df[vj_col].astype(str).str.strip() != "")
+                df = df[mask].copy()
     
     # Get sample values
     freq_idx = get_column_index(df, freq_column)
@@ -90,7 +99,7 @@ def load_distribution(filepath, freq_column, weights_column, productive_filter=F
     if len(sample_values) == 0:
         raise ValueError(
             f"No valid rows remaining after filtering for file '{filepath}'. "
-            "Check --productive-filter / --vdj-filter or input data."
+            "Check --productive-filter / --vdj-filter / --vj-filter or input data."
         )
     
     # Check if we should use weights
@@ -159,7 +168,7 @@ def discretize_on_grid(values, weights, grid):
 def main():
     """Main function."""
     if len(sys.argv) < 2:
-        print("Usage: python olga-plot-barycenter.py <input_folder> [--barycenter <file>] [--weights-column <col>] [--freq-column <col>] [--output-plot <file>] [--productive-filter] [--vdj-filter]")
+        print("Usage: python olga-plot-barycenter.py <input_folder> [--barycenter <file>] [--weights-column <col>] [--freq-column <col>] [--output-plot <file>] [--productive-filter] [--vdj-filter] [--vj-filter]")
         print("\nParameters:")
         print("  input_folder        : Path to folder containing TSV files")
         print("  --barycenter <file> : Path to barycenter NPZ file (default: barycenter.npz in input_folder)")
@@ -168,6 +177,7 @@ def main():
         print("  --output-plot <file>: Output plot filename (default: barycenter_plot.png)")
         print("  --productive-filter : Filter only productive sequences (default: off)")
         print("  --vdj-filter        : Require non-empty v_call/d_call/j_call for existing columns")
+        print("  --vj-filter         : Require non-empty v_call/j_call for existing columns")
         print("\nExamples:")
         print("  python olga-plot-barycenter.py input/test-cloud-Tumeh2014")
         print("  python olga-plot-barycenter.py input/test-cloud-Tumeh2014 --barycenter ~/data/mybarycenter.npz")
@@ -181,6 +191,7 @@ def main():
     output_plot = "barycenter_plot.png"
     productive_filter = False
     vdj_filter = False
+    vj_filter = False
     
     # Parse remaining arguments
     i = 2
@@ -202,6 +213,9 @@ def main():
             i += 1
         elif sys.argv[i] == "--vdj-filter":
             vdj_filter = True
+            i += 1
+        elif sys.argv[i] == "--vj-filter":
+            vj_filter = True
             i += 1
         else:
             print(f"Error: Unknown argument '{sys.argv[i]}'")
@@ -248,7 +262,7 @@ def main():
         
         for filepath in tsv_files:
             filename = os.path.basename(filepath)
-            values, weights = load_distribution(filepath, freq_column, weights_column, productive_filter, vdj_filter)
+            values, weights = load_distribution(filepath, freq_column, weights_column, productive_filter, vdj_filter, vj_filter)
             
             # Discretize on the barycenter's grid
             dist = discretize_on_grid(values, weights, grid)

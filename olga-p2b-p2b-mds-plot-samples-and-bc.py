@@ -111,7 +111,7 @@ def _create_8pointed_star_marker():
     return mpath.Path(vertices, codes)
 
 
-def _compute_pairwise_distances(files, grid, barycenter_weights, freq_column, weights_column, productive_filter, vdj_filter):
+def _compute_pairwise_distances(files, grid, barycenter_weights, freq_column, weights_column, productive_filter, vdj_filter, vj_filter):
     """
     Compute pairwise Wasserstein distances between samples.
     
@@ -131,6 +131,8 @@ def _compute_pairwise_distances(files, grid, barycenter_weights, freq_column, we
         Filter only productive sequences
     vdj_filter : bool
         If True, require non-empty V/D/J call columns when present
+    vj_filter : bool
+        If True, require non-empty V/J call columns when present
         
     Returns
     -------
@@ -154,7 +156,8 @@ def _compute_pairwise_distances(files, grid, barycenter_weights, freq_column, we
             freq_column=freq_column,
             weights_column=weights_column,
             productive_filter=productive_filter,
-            vdj_filter=vdj_filter
+            vdj_filter=vdj_filter,
+            vj_filter=vj_filter
         )
         all_samples.append((values, weights))
         all_values.append(values)
@@ -188,7 +191,7 @@ def _compute_pairwise_distances(files, grid, barycenter_weights, freq_column, we
     return distances, extended_grid, extended_barycenter
 
 
-def _compute_distances_to_barycenter(files, grid, barycenter_weights, freq_column, weights_column, productive_filter, vdj_filter):
+def _compute_distances_to_barycenter(files, grid, barycenter_weights, freq_column, weights_column, productive_filter, vdj_filter, vj_filter):
     """
     Compute distances from samples to barycenter.
     
@@ -208,6 +211,8 @@ def _compute_distances_to_barycenter(files, grid, barycenter_weights, freq_colum
         Filter only productive sequences
     vdj_filter : bool
         If True, require non-empty V/D/J call columns when present
+    vj_filter : bool
+        If True, require non-empty V/J call columns when present
         
     Returns
     -------
@@ -228,7 +233,8 @@ def _compute_distances_to_barycenter(files, grid, barycenter_weights, freq_colum
             freq_column=freq_column,
             weights_column=weights_column,
             productive_filter=productive_filter,
-            vdj_filter=vdj_filter
+            vdj_filter=vdj_filter,
+            vj_filter=vj_filter
         )
         all_samples.append((values, weights))
         all_values.append(values)
@@ -270,6 +276,7 @@ def main():
         print("  --output-plot <file>  : Output plot filename (default: ot-mds-plot.png)")
         print("  --productive-filter   : Filter only productive sequences (default: off)")
         print("  --vdj-filter          : Require non-empty v_call/d_call/j_call for existing columns")
+        print("  --vj-filter           : Require non-empty v_call/j_call for existing columns")
         print("\nOutput:")
         print("  MDS visualization with light green (normal samples + barycenter) and orange (mapped samples)")
         print("  Plot saved in samples folder (or parent folder if samples is a file list)")
@@ -288,6 +295,7 @@ def main():
     output_plot = "ot-mds-plot.png"
     productive_filter = False
     vdj_filter = False
+    vj_filter = False
 
     i = 3
     while i < len(sys.argv):
@@ -309,6 +317,9 @@ def main():
             i += 1
         elif arg == "--vdj-filter":
             vdj_filter = True
+            i += 1
+        elif arg == "--vj-filter":
+            vj_filter = True
             i += 1
         else:
             i += 1
@@ -335,7 +346,7 @@ def main():
     all_files = barycenter_files + samples_files
     all_distances, extended_grid, extended_barycenter = _compute_pairwise_distances(
         all_files, grid, barycenter_weights,
-        freq_column, weights_column, productive_filter, vdj_filter
+        freq_column, weights_column, productive_filter, vdj_filter, vj_filter
     )
 
     # Add barycenter as a point (distance 0 to itself)
@@ -350,7 +361,7 @@ def main():
     # Distances to barycenter center point
     barycenter_dists, _, _ = _compute_distances_to_barycenter(
         all_files, extended_grid, extended_barycenter,
-        freq_column, weights_column, productive_filter, vdj_filter
+        freq_column, weights_column, productive_filter, vdj_filter, vj_filter
     )
     full_distances[n_barycenter + n_samples, :n_barycenter + n_samples] = barycenter_dists
     full_distances[:n_barycenter + n_samples, n_barycenter + n_samples] = barycenter_dists

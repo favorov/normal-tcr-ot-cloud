@@ -2022,6 +2022,34 @@ python3 olga-p2p-ot.py input/ Patient01.tsv Patient02.tsv --all --productive-fil
 
 ---
 
+## Session 16 — VJ filter rollout and sequential filters (2026-03-02)
+
+**Запрос пользователя:** добавить `--vj-filter` во все скрипты, где уже есть `--vdj-filter`, и обеспечить последовательное применение фильтров к каждой таблице из входных файлов.
+
+**Что изменено:**
+
+1. Добавлен флаг `--vj-filter` во всех рабочих CLI-скриптах, где есть `--vdj-filter`:
+   - `olga-p2b-ot.py`
+   - `olga-p2p-ot.py`
+   - `olga-p2p-mds-plot-samples.py`
+   - `olga-boxplot-samples-ot-2pb.py`
+   - `olga-p2b-p2b-mds-plot-samples-and-bc.py`
+   - `olga-samples-p2b-pval.py`
+   - `olga-barycenter-ot.py`
+   - `olga-plot-barycenter.py`
+2. В `ot_utils.load_distribution(..., vj_filter=False)` добавлена фильтрация по `v_call/j_call` (для существующих колонок).
+3. В локальных `load_distribution` (`olga-barycenter-ot.py`, `olga-plot-barycenter.py`) добавлена аналогичная поддержка `vj_filter`.
+4. Порядок применения фильтров зафиксирован как последовательный для каждой загруженной таблицы:
+   - `--productive-filter` → `--vdj-filter` → `--vj-filter`.
+5. Синхронизирована документация:
+   - `README.md` (параметры всех релевантных скриптов)
+   - `.copilot-context.md` (сигнатура, шаги обработки, описание `--vj-filter`)
+
+**Контекстная пометка:**
+- Диагностические принты фильтрации остаются только в `archive/filter-test/filter-test.py` по отдельному решению пользователя и не распространяются на рабочие скрипты.
+
+---
+
 ## Сессия 13: Переименование скриптов MDS для ясности (19 февраля 2026)
 
 ### Улучшение читаемости имён скриптов

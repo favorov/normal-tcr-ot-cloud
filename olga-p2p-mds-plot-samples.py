@@ -129,7 +129,7 @@ def _get_directory_colors(files):
     return colors, dir_to_color
 
 
-def _compute_pairwise_distances(files, freq_column, weights_column, productive_filter, vdj_filter):
+def _compute_pairwise_distances(files, freq_column, weights_column, productive_filter, vdj_filter, vj_filter):
     """
     Compute pairwise Wasserstein distances between samples.
     
@@ -145,6 +145,8 @@ def _compute_pairwise_distances(files, freq_column, weights_column, productive_f
         If True, filter only productive sequences
     vdj_filter : bool
         If True, require non-empty V/D/J call columns when present
+    vj_filter : bool
+        If True, require non-empty V/J call columns when present
         
     Returns
     -------
@@ -166,7 +168,8 @@ def _compute_pairwise_distances(files, freq_column, weights_column, productive_f
             freq_column=freq_column,
             weights_column=weights_column,
             productive_filter=productive_filter,
-            vdj_filter=vdj_filter
+            vdj_filter=vdj_filter,
+            vj_filter=vj_filter
         )
         all_samples.append((values, weights))
         all_values.append(values)
@@ -213,6 +216,7 @@ def main():
         print("  --output-plot <file>  : Output plot filename (default: ot-simple-mds-plot.png)")
         print("  --productive-filter   : Filter only productive sequences (if productive column exists)")
         print("  --vdj-filter          : Require non-empty v_call/d_call/j_call for existing columns")
+        print("  --vj-filter           : Require non-empty v_call/j_call for existing columns")
         print("\nOutput:")
         print("  MDS visualization with points color-coded by source directory")
         print("  Plot saved in samples folder (or parent folder if samples is a file list)")
@@ -228,6 +232,7 @@ def main():
     output_plot = "ot-simple-p2p-mds-plot.png"
     productive_filter = False
     vdj_filter = False
+    vj_filter = False
 
     i = 2
     while i < len(sys.argv):
@@ -247,6 +252,9 @@ def main():
         elif arg == "--vdj-filter":
             vdj_filter = True
             i += 1
+        elif arg == "--vj-filter":
+            vj_filter = True
+            i += 1
         else:
             i += 1
 
@@ -262,7 +270,7 @@ def main():
     # Compute pairwise distances
     print("Computing pairwise distances...")
     distances, extended_grid = _compute_pairwise_distances(
-        samples_files, freq_column, weights_column, productive_filter, vdj_filter
+        samples_files, freq_column, weights_column, productive_filter, vdj_filter, vj_filter
     )
 
     # Apply MDS

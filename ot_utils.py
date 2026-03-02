@@ -88,6 +88,7 @@ def load_distribution(
     weights_column="duplicate_frequency_percent",
     productive_filter=False,
     vdj_filter=False,
+    vj_filter=False,
 ):
     """
     Load a TCR distribution from a TSV file.
@@ -107,6 +108,9 @@ def load_distribution(
     vdj_filter : bool
         If True, rows are kept only when each existing VDJ call column
         ('v_call', 'd_call', 'j_call') is non-empty.
+    vj_filter : bool
+        If True, rows are kept only when each existing V/J call column
+        ('v_call', 'j_call') is non-empty.
         
     Returns
     -------
@@ -132,6 +136,13 @@ def load_distribution(
             if vdj_col in df.columns:
                 non_empty_mask = df[vdj_col].notna() & (df[vdj_col].astype(str).str.strip() != "")
                 df = df[non_empty_mask].copy()
+
+    # Apply VJ filter if requested (for columns that exist)
+    if vj_filter:
+        for vj_col in ['v_call', 'j_call']:
+            if vj_col in df.columns:
+                non_empty_mask = df[vj_col].notna() & (df[vj_col].astype(str).str.strip() != "")
+                df = df[non_empty_mask].copy()
     
     # Get frequency column
     freq_idx = _find_column_index(df, freq_column, 'freq_column')
@@ -144,7 +155,7 @@ def load_distribution(
     if len(values) == 0:
         raise ValueError(
             f"No valid rows remaining after filtering for file '{filepath}'. "
-            "Check --productive-filter / --vdj-filter or input data."
+            "Check --productive-filter / --vdj-filter / --vj-filter or input data."
         )
     
     # Get weights
