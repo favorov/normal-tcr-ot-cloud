@@ -2033,7 +2033,7 @@ python3 olga-p2p-ot.py input/ Patient01.tsv Patient02.tsv --all --productive-fil
    - `olga-p2p-ot.py`
    - `olga-p2p-mds-plot-samples.py`
    - `olga-boxplot-samples-ot-2pb.py`
-   - `olga-p2b-p2b-mds-plot-samples-and-bc.py`
+   - `olga-p2b-mds-plot-samples-and-bc.py`
    - `olga-samples-p2b-pval.py`
    - `olga-barycenter-ot.py`
    - `olga-plot-barycenter.py`
@@ -2052,7 +2052,7 @@ python3 olga-p2p-ot.py input/ Patient01.tsv Patient02.tsv --all --productive-fil
 
 ## Session 17 — Unified p2b interface (2026-03-03)
 
-**Запрос пользователя:** сделать параметры `olga-p2b-ot.py` такими же, как у `olga-p2b-p2b-mds-plot-samples-and-bc.py` и `olga-samples-p2b-pval.py`, даже если это убирает отдельный режим “позиционный файл-образец”.
+**Запрос пользователя:** сделать параметры `olga-p2b-ot.py` такими же, как у `olga-p2b-mds-plot-samples-and-bc.py` и `olga-samples-p2b-pval.py`, даже если это убирает отдельный режим “позиционный файл-образец”.
 
 **Что изменено:**
 
@@ -2085,7 +2085,7 @@ python3 olga-p2p-ot.py input/ Patient01.tsv Patient02.tsv --all --productive-fil
 
 Два скрипта переименованы для явного указания их назначения:
 
-1. **`olga-mds-plot-samples.py` → `olga-p2b-p2b-mds-plot-samples-and-bc.py`**
+1. **`olga-mds-plot-samples.py` → `olga-p2b-mds-plot-samples-and-bc.py`**
    - Взаимодействие: **p2b** (point-to-barycenter)
    - Визуализирует: sample distributions + barycenter
    - Новое имя ясно указывает на сравнение **двух наборов** (normal samples + barycenter vs test samples)
@@ -2103,7 +2103,7 @@ python3 olga-p2p-ot.py input/ Patient01.tsv Patient02.tsv --all --productive-fil
 olga-[MODE]-[DIMENSIONS]-[DESCRIPTION].py
 
 Примеры:
-- olga-p2b-p2b-mds-plot-samples-and-bc.py
+- olga-p2b-mds-plot-samples-and-bc.py
   └─ p2b: стольклось расстояния (normal samples ↔ barycenter)
   └─ mds: алгоритм (Multidimensional Scaling)
   └─ samples-and-bc: объекты (Samples И BaryCentrum)
@@ -2131,7 +2131,7 @@ olga-simple-ot-mds-plot.py     (неясно: что means "simple"?)
 
 **После:**
 ```
-olga-p2b-p2b-mds-plot-samples-and-bc.py   (ясно: p2b сравнение samples + barycenter)
+olga-p2b-mds-plot-samples-and-bc.py   (ясно: p2b сравнение samples + barycenter)
 olga-p2p-mds-plot-samples.py              (ясно: p2p сравнение только samples)
 ```
 
