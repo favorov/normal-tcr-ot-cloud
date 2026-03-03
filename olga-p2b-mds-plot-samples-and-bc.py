@@ -378,7 +378,7 @@ def main():
     for i in range(n_barycenter):
         ax.scatter(
             mds_coords[i, 0], mds_coords[i, 1],
-            c='#90EE90', s=80, alpha=0.7, edgecolors='#0B5D1E', linewidth=0.5,
+            c='#90EE90', s=100, alpha=.7, edgecolors='#0B5D1E', linewidth=2,
             zorder=4
         )
 
@@ -389,7 +389,7 @@ def main():
         x, y = mds_coords[file_idx, 0], mds_coords[file_idx, 1]
         ax.scatter(
             x, y,
-            c='#F28E2B', s=100, alpha=0.8, edgecolors='black', linewidth=1.5,
+            c='#F28E2B', s=150, alpha=0.8, edgecolors='black', linewidth=1.5,
             zorder=3
         )
         # Add label - use custom if provided, otherwise auto-generate
@@ -419,7 +419,7 @@ def main():
     ax.scatter(
         mds_coords[barycenter_idx, 0], mds_coords[barycenter_idx, 1],
         c='#90EE90', s=600, alpha=0.9, marker=star_marker,
-        edgecolors='#0B5D1E', linewidth=2.5,
+        edgecolors='#0B5D1E', linewidth=2,
         zorder=5
     )
 
