@@ -1,0 +1,37 @@
+Loading barycenter from cloud-Tumeh2014-Base/barycenter.npz
+Found 25 barycenter files, 10 sample files
+Computing distances for normal samples (barycenter files)...
+Fitting null hypothesis model...
+  Model: Normal(μ=1.5187, σ=0.7542)
+
+Computing distances and p-values for sample files...
+
+===================================================================================================================
+Label    Filename                                              Distance      P-value     Bonf. p
+===================================================================================================================
+24P      mapped-Tumeh2014-Post/Patient24_Post_tcr_pgen.tsv     4.906273 7.072948e-06 7.072948e-05
+23P      mapped-Tumeh2014-Post/Patient23_Post_tcr_pgen.tsv     4.273896 2.591541e-04 2.591541e-03
+25P      mapped-Tumeh2014-Post/Patient25_Post_tcr_pgen.tsv     3.042168 4.338921e-02 4.338921e-01
+18P      mapped-Tumeh2014-Post/Patient18_Post_tcr_pgen.tsv     2.955119 5.684116e-02 5.684116e-01
+16P      mapped-Tumeh2014-Post/Patient16_Post_tcr_pgen.tsv     2.588723 1.559744e-01 1.000000e+00
+17P      mapped-Tumeh2014-Post/Patient17_Post_tcr_pgen.tsv     1.396677 8.715086e-01 1.000000e+00
+19P      mapped-Tumeh2014-Post/Patient19_Post_tcr_pgen.tsv     2.742244 1.047418e-01 1.000000e+00
+20P      mapped-Tumeh2014-Post/Patient20_Post_tcr_pgen.tsv     1.740473 7.686952e-01 1.000000e+00
+21P      mapped-Tumeh2014-Post/Patient21_Post_tcr_pgen.tsv     1.076957 5.581143e-01 1.000000e+00
+22P      mapped-Tumeh2014-Post/Patient22_Post_tcr_pgen.tsv     2.035128 4.935002e-01 1.000000e+00
+===================================================================================================================
+
+Summary:
+  Total samples: 10
+  Number of tests (for Bonferroni correction): 10
+
+  Raw p-values:
+    Range: [7.072948e-06, 8.715086e-01]
+    Significant (p < 0.05): 3
+    Significant (p < 0.01): 2
+
+  Bonferroni-adjusted p-values (FWER control):
+    Range: [7.072948e-05, 1.000000e+00]
+    Significant (p_adj < 0.05): 2
+    Significant (p_adj < 0.01): 2
+

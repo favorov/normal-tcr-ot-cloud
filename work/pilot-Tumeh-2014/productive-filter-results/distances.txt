@@ -1,0 +1,33 @@
+Loading barycenter from: cloud-Tumeh2014-Base/barycenter.npz
+  Grid size: 200
+  Grid range: [1.421e-24, 3.541e-06]
+
+Processing 10 sample file(s)
+
+================================================================================
+WASSERSTEIN DISTANCES TO BARYCENTER (sorted by distance, decreasing)
+================================================================================
+Label      File                                                 Distance    Samples
+--------------------------------------------------------------------------------
+24P        Patient24_Post_tcr_pgen.tsv                      4.906273e+00        103
+23P        Patient23_Post_tcr_pgen.tsv                      4.273896e+00         54
+25P        Patient25_Post_tcr_pgen.tsv                      3.042168e+00         49
+18P        Patient18_Post_tcr_pgen.tsv                      2.955119e+00         55
+19P        Patient19_Post_tcr_pgen.tsv                      2.742244e+00         48
+16P        Patient16_Post_tcr_pgen.tsv                      2.588723e+00         53
+22P        Patient22_Post_tcr_pgen.tsv                      2.035128e+00         84
+20P        Patient20_Post_tcr_pgen.tsv                      1.740473e+00         54
+17P        Patient17_Post_tcr_pgen.tsv                      1.396677e+00         89
+21P        Patient21_Post_tcr_pgen.tsv                      1.076957e+00         77
+================================================================================
+STATISTICS
+================================================================================
+Count:        10
+Mean:         2.675766e+00
+Median:       2.665484e+00
+Std:          1.150257e+00
+Min:          1.076957e+00 (Patient21_Post_tcr_pgen.tsv)
+Max:          4.906273e+00 (Patient24_Post_tcr_pgen.tsv)
+Q1 (25%):     1.814137e+00
+Q3 (75%):     3.020406e+00
+================================================================================
