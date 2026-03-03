@@ -2050,6 +2050,31 @@ python3 olga-p2p-ot.py input/ Patient01.tsv Patient02.tsv --all --productive-fil
 
 ---
 
+## Session 17 — Unified p2b interface (2026-03-03)
+
+**Запрос пользователя:** сделать параметры `olga-p2b-ot.py` такими же, как у `olga-p2b-p2b-mds-plot-samples-and-bc.py` и `olga-samples-p2b-pval.py`, даже если это убирает отдельный режим “позиционный файл-образец”.
+
+**Что изменено:**
+
+1. `olga-p2b-ot.py` переведён на единый контракт:
+   - `python3 olga-p2b-ot.py <barycenter_folder> <samples> [options]`
+2. Удалён старый режим с позиционным `file.tsv` и удалён флаг `--all`.
+3. `samples` теперь поддерживает два формата (как в соседних скриптах):
+   - папка с `.tsv`,
+   - текстовый список файлов (по одной записи на строку, поддержка custom label во второй колонке).
+4. Добавлены/синхронизированы общие элементы поведения:
+   - резолв `--barycenter` (абсолютный путь или относительно `barycenter_folder`),
+   - table output с `Label` + `File` + `Distance` + `Samples`,
+   - `--pipeline` и `--statistics-only` в том же стиле, что в остальных p2b-сценариях.
+5. Документация синхронизирована:
+   - `README.md` — usage/parameters/examples/workflows для `olga-p2b-ot.py`,
+   - `.copilot-context.md` — описание интерфейса, примеры фильтров и test command.
+
+**Контекстная пометка:**
+- Старые упоминания в истории про `olga-p2b-ot.py` в формате `<input_folder> <file.tsv>` или с `--all` считать историческими.
+
+---
+
 ## Сессия 13: Переименование скриптов MDS для ясности (19 февраля 2026)
 
 ### Улучшение читаемости имён скриптов

@@ -173,19 +173,16 @@ Computes Wasserstein distances from distributions to the barycenter.
 ### Usage
 
 ```bash
-# Single file
-python3 olga-p2b-ot.py <input_folder> <file.tsv> [options]
-
-# Batch mode (all files)
-python3 olga-p2b-ot.py <input_folder> [--all] [options]
+python3 olga-p2b-ot.py <barycenter_folder> <samples> [options]
 ```
 
 ### Parameters
 
+- `barycenter_folder` — folder with TSV files and barycenter.npz
+- `samples` — either a folder with TSV files or a text file with one TSV path per line
 - `--freq-column <col>` — default: pgen
 - `--weights-column <col>` — default: duplicate_frequency_percent
 - `--barycenter <file>` — path to barycenter (default: barycenter.npz)
-- `--all` — process all TSV files
 - `--pipeline` — output numbers only
 - `--statistics-only` — show statistics only
 - `--productive-filter` — filter only productive sequences (if productive column exists)
@@ -195,22 +192,21 @@ python3 olga-p2b-ot.py <input_folder> [--all] [options]
 ### Examples
 
 ```bash
-# Single file
-python3 olga-p2b-ot.py input/test-cloud-Tumeh2014 \
-    Patient01_Base_tcr_pgen.tsv
+# Samples from folder
+python3 olga-p2b-ot.py input/test-cloud-Tumeh2014 input/new-samples
 
-# Batch mode with weights
+# Samples from list file
 python3 olga-p2b-ot.py input/test-cloud-Tumeh2014 \
-    --weights-column duplicate_frequency_percent --statistics-only
+    input/samples-list-2-formats.txt --statistics-only
 
 # Pipeline mode
 python3 olga-p2b-ot.py input/test-cloud-Tumeh2014 \
-    Patient01_Base_tcr_pgen.tsv --pipeline
+    input/new-samples --pipeline
 ```
 
 **Output:**
-- Single file: distance + detailed info
-- Batch mode: table sorted by distance + statistics
+- Normal mode: table sorted by distance + statistics
+- If list file includes labels (`path/to/file.tsv CustomLabel`), label is shown in output table
 - `--pipeline`: numbers only
 - `--statistics-only`: statistics only
 
@@ -513,6 +509,7 @@ python3 olga-plot-barycenter.py input/test-cloud-Tumeh2014 \
 
 # Step 3: Distances to barycenter
 python3 olga-p2b-ot.py input/test-cloud-Tumeh2014 \
+    input/test-cloud-Tumeh2014 \
     --weights-column duplicate_frequency_percent --statistics-only
 ```
 
@@ -536,7 +533,7 @@ for patient in Patient{01..25}_Base_tcr_pgen.tsv; do
     # Compute barycenter without this patient
     python3 olga-barycenter-ot.py input/cohort --exclude $patient
     # Compute distance
-    python3 olga-p2b-ot.py input/cohort $patient --pipeline
+    python3 olga-p2b-ot.py input/cohort input/cohort/$patient --pipeline
 done
 ```
 
@@ -551,7 +548,7 @@ closest=""
 
 for file in input/test-cloud-Tumeh2014/*.tsv; do
     dist=$(python3 olga-p2b-ot.py input/test-cloud-Tumeh2014 \
-        $(basename $file) --pipeline)
+        "$file" --pipeline)
     if (( $(echo "$dist < $min_dist" | bc -l) )); then
         min_dist=$dist
         closest=$(basename $file)
