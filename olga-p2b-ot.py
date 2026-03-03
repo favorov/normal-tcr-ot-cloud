@@ -218,15 +218,15 @@ def main():
 
     # Display results
     if pipeline_mode:
-        results.sort(key=lambda x: x['distance'])
+        results.sort(key=lambda x: x['distance'], reverse=True)
         for r in results:
             print(f"{r['distance']:.10e}")
     else:
         # Sort by distance
-        results.sort(key=lambda x: x['distance'])
+        results.sort(key=lambda x: x['distance'], reverse=True)
 
         print("=" * 80)
-        print("WASSERSTEIN DISTANCES TO BARYCENTER (sorted by distance)")
+        print("WASSERSTEIN DISTANCES TO BARYCENTER (sorted by distance, decreasing)")
         print("=" * 80)
 
         if not statistics_only:
@@ -244,8 +244,8 @@ def main():
         print(f"Mean:         {np.mean(distances):.6e}")
         print(f"Median:       {np.median(distances):.6e}")
         print(f"Std:          {np.std(distances):.6e}")
-        print(f"Min:          {np.min(distances):.6e} ({results[0]['file']})")
-        print(f"Max:          {np.max(distances):.6e} ({results[-1]['file']})")
+        print(f"Min:          {np.min(distances):.6e} ({results[-1]['file']})")
+        print(f"Max:          {np.max(distances):.6e} ({results[0]['file']})")
         print(f"Q1 (25%):     {np.percentile(distances, 25):.6e}")
         print(f"Q3 (75%):     {np.percentile(distances, 75):.6e}")
         print("=" * 80)
