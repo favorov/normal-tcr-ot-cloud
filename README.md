@@ -603,9 +603,9 @@ All figures are sized 2x compared to standard plots for improved clarity and red
 
 ## Documentation
 
-Full development history: `HISTORY.md` (Русский)  
-Technical context and architecture: `CONTEXT.md`  
-Archive (earlier versions): `archive/copilot-chat.md`
+Full development history: `archive/copilot-chat.md` (Русский)  
+Technical context and architecture: `.copilot-context.md`  
+Archive backup: `archive/copilot-chat-backup.md`
 
 ## License
 

@@ -274,6 +274,7 @@ def main():
         print("  --weights-column <col>: Column index or name for weights, or 'off' (default: duplicate_frequency_percent)")
         print("  --barycenter <file>   : Barycenter file (default: barycenter.npz)")
         print("  --output-plot <file>  : Output plot filename (default: ot-mds-plot.png)")
+        print("  --label-cloud-samples : Add labels to cloud/base files used for barycenter (default: off)")
         print("  --productive-filter   : Filter only productive sequences (default: off)")
         print("  --vdj-filter          : Require non-empty v_call/d_call/j_call for existing columns")
         print("  --vj-filter           : Require non-empty v_call/j_call for existing columns")
@@ -293,6 +294,7 @@ def main():
     weights_column = "duplicate_frequency_percent"
     barycenter_file = "barycenter.npz"
     output_plot = "ot-mds-plot.png"
+    labels_cloud_samples = False
     productive_filter = False
     vdj_filter = False
     vj_filter = False
@@ -312,6 +314,9 @@ def main():
         elif arg == "--output-plot" and i + 1 < len(sys.argv):
             output_plot = sys.argv[i + 1]
             i += 2
+        elif arg == "--label-cloud-samples":
+            labels_cloud_samples = True
+            i += 1
         elif arg == "--productive-filter":
             productive_filter = True
             i += 1
@@ -375,15 +380,27 @@ def main():
     fig, ax = plt.subplots(figsize=(24, 20))
 
     # Plot barycenter files (light green #90EE90)
+    texts = []
     for i in range(n_barycenter):
+        x, y = mds_coords[i, 0], mds_coords[i, 1]
         ax.scatter(
-            mds_coords[i, 0], mds_coords[i, 1],
+            x, y,
             c='#90EE90', s=100, alpha=.7, edgecolors='#0B5D1E', linewidth=2,
             zorder=4
         )
+        if labels_cloud_samples:
+            label = _label_from_filename(barycenter_files[i])
+            txt = ax.text(
+                x, y + 0.04,
+                label,
+                ha='center', va='bottom',
+                fontsize=9, fontweight='bold',
+                color='#000000',
+                zorder=4
+            )
+            texts.append(txt)
 
     # Plot samples (orange #F28E2B with labels)
-    texts = []
     for i in range(n_samples):
         file_idx = n_barycenter + i
         x, y = mds_coords[file_idx, 0], mds_coords[file_idx, 1]
