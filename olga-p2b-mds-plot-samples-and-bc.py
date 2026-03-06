@@ -377,7 +377,7 @@ def main():
     mds_coords = mds.fit_transform(full_distances)
 
     # Create plot
-    fig, ax = plt.subplots(figsize=(24, 20))
+    fig, ax = plt.subplots(figsize=(12, 10))
 
     # Plot barycenter files (light green #90EE90)
     texts = []
