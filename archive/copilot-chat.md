@@ -5,6 +5,39 @@
 
 ---
 
+## Сессия 9: Wilcoxon сравнение sample vs cloud (6 марта 2026)
+
+### Запрос пользователя
+
+Добавить новый скрипт с CLI как у `olga-p2b-ot.py`, который:
+1. Считает OT расстояния от sample-файлов до барицентра
+2. Считает OT расстояния от cloud-файлов (из папки барицентра) до барицентра
+3. Печатает descriptive statistics для обеих групп
+4. Считает one-sided Wilcoxon p-value с гипотезой, что cloud не больше sample
+
+### Реализация
+
+Создан скрипт:
+- `olga-p2p-ot-wilcoxon.py`
+
+Ключевые детали:
+- Интерфейс повторяет `olga-p2b-ot.py` (`--freq-column`, `--weights-column`, `--barycenter`, `--pipeline`, `--statistics-only`, `--productive-filter`, `--vdj-filter`, `--vj-filter`)
+- Для статистического теста использован `scipy.stats.mannwhitneyu(..., alternative='less')`
+- В `--pipeline` режиме выводится только one-sided p-value
+
+### Коррекция имени
+
+По уточнению пользователя исправлено имя файла:
+- было: `olga-p2p-ot-wilocoxon.py`
+- стало: `olga-p2p-ot-wilcoxon.py`
+
+### Обновлённая документация
+
+- `README.md` — добавлен новый скрипт в список и отдельный раздел с usage/examples/output
+- `.copilot-context.md` — добавлено описание нового workflow и зависимости `scipy`
+
+---
+
 ## Сессия 6: Новый скрипт для картирования сэмплов (13 февраля 2026)
 
 ### Новые возможности

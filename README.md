@@ -8,6 +8,7 @@ A toolkit for analyzing TCR distributions using Wasserstein Optimal Transport.
 python3 -m venv .venv
 source .venv/bin/activate
 pip install numpy pandas pot matplotlib scikit-learn
+pip install scipy
 ```
 
 ## Architecture
@@ -26,6 +27,7 @@ pip install numpy pandas pot matplotlib scikit-learn
 6. `olga-p2b-mds-plot-samples-and-bc.py` — MDS visualization of samples vs barycenter
 7. `olga-p2p-mds-plot-samples.py` — simplified MDS visualization (no barycenter)
 8. `olga-samples-p2b-pval.py` — statistical significance of sample distances
+9. `olga-p2p-ot-wilcoxon.py` — compare sample-vs-cloud distances to barycenter with one-sided Wilcoxon test
 
 ---
 
@@ -209,6 +211,60 @@ python3 olga-p2b-ot.py input/test-cloud-Tumeh2014 \
 - If list file includes labels (`path/to/file.tsv CustomLabel`), label is shown in output table
 - `--pipeline`: numbers only
 - `--statistics-only`: statistics only
+
+---
+
+## olga-p2p-ot-wilcoxon.py
+
+Compares two groups of distance-to-barycenter values:
+- sample files (`<samples>` argument), and
+- cloud/origin files (`*.tsv` inside `<barycenter_folder>`).
+
+Computes descriptive statistics for both groups and a one-sided Wilcoxon rank-sum p-value.
+
+### Usage
+
+```bash
+python3 olga-p2p-ot-wilcoxon.py <barycenter_folder> <samples> [options]
+```
+
+### Parameters
+
+- `barycenter_folder` — folder with cloud TSV files and barycenter.npz
+- `samples` — either a folder with TSV files or a text file with one TSV path per line
+- `--freq-column <col>` — default: pgen
+- `--weights-column <col>` — default: duplicate_frequency_percent
+- `--barycenter <file>` — path to barycenter (default: barycenter.npz)
+- `--pipeline` — output one-sided p-value only
+- `--statistics-only` — show only per-group statistics (no per-file tables)
+- `--productive-filter` — filter only productive sequences (if productive column exists)
+- `--vdj-filter` — require non-empty `v_call`, `d_call`, `j_call` for columns that exist
+- `--vj-filter` — require non-empty `v_call`, `j_call` for columns that exist
+
+### Examples
+
+```bash
+# Compare cloud-vs-samples with full report
+python3 olga-p2p-ot-wilcoxon.py input/test-cloud-Tumeh2014 input/new-samples
+
+# Samples from list file
+python3 olga-p2p-ot-wilcoxon.py input/test-cloud-Tumeh2014 \
+    input/samples-list-2-formats.txt --statistics-only
+
+# Pipeline mode (p-value only)
+python3 olga-p2p-ot-wilcoxon.py input/test-cloud-Tumeh2014 \
+    input/new-samples --pipeline
+```
+
+**Statistical test:**
+- One-sided Wilcoxon rank-sum (Mann-Whitney U)
+- Alternative hypothesis: cloud distances are smaller than sample distances
+
+**Output:**
+- Sample group: per-file distances (optional) + descriptive statistics
+- Cloud group: per-file distances (optional) + descriptive statistics
+- Wilcoxon section: U statistic and one-sided p-value
+- `--pipeline`: one-sided p-value only
 
 ---
 
