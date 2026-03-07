@@ -10,6 +10,7 @@ Wilcoxon rank-sum (Mann-Whitney U) p-value testing cloud < sample.
 
 import os
 import sys
+import argparse
 import numpy as np
 from pathlib import Path
 
@@ -166,71 +167,47 @@ def _print_group_table(title, results, statistics_only=False):
     print(f"Q3 (75%):     {np.percentile(distances, 75):.6e}")
 
 
+def parse_args():
+    """Parse CLI arguments."""
+    parser = argparse.ArgumentParser(
+        description=(
+            "Compare OT distances to barycenter between sample files and cloud files, "
+            "and run a one-sided Wilcoxon rank-sum test."
+        ),
+    )
+    parser.add_argument("barycenter_folder", help="Folder containing cloud TSV files and barycenter.npz")
+    parser.add_argument(
+        "samples",
+        help="Either folder with TSV files or text file with one TSV path per line",
+    )
+    parser.add_argument("--freq-column", default="pgen", dest="freq_column")
+    parser.add_argument(
+        "--weights-column",
+        default="duplicate_frequency_percent",
+        dest="weights_column",
+    )
+    parser.add_argument("--barycenter", default="barycenter.npz", dest="barycenter_file")
+    parser.add_argument("--pipeline", action="store_true", dest="pipeline_mode")
+    parser.add_argument("--statistics-only", action="store_true", dest="statistics_only")
+    parser.add_argument("--productive-filter", action="store_true", dest="productive_filter")
+    parser.add_argument("--vdj-filter", action="store_true", dest="vdj_filter")
+    parser.add_argument("--vj-filter", action="store_true", dest="vj_filter")
+    return parser.parse_args()
+
+
 def main():
     """Main function."""
-    if len(sys.argv) < 3:
-        print("Usage: python olga-p2p-ot-wilocoxon.py <barycenter_folder> <samples> [options]")
-        print("\nParameters:")
-        print("  barycenter_folder      : Folder containing cloud TSV files and barycenter.npz")
-        print("  samples                : Either folder with TSV files or text file with one TSV path per line")
-        print("  --freq-column <col>    : Column index or name for frequencies (default: pgen)")
-        print("  --weights-column <col> : Column index or name for weights, or 'off' (default: duplicate_frequency_percent)")
-        print("  --barycenter <file>    : Custom barycenter file (default: barycenter.npz)")
-        print("  --pipeline             : Output only one-sided p-value (for scripting)")
-        print("  --statistics-only      : Show only statistics")
-        print("  --productive-filter    : Filter only productive sequences (if productive column exists)")
-        print("  --vdj-filter           : Require non-empty v_call/d_call/j_call for existing columns")
-        print("  --vj-filter            : Require non-empty v_call/j_call for existing columns")
-        print("\nExamples:")
-        print("  python olga-p2p-ot-wilocoxon.py input/test-cloud-Tumeh2014 input/new-samples")
-        print("  python olga-p2p-ot-wilocoxon.py input/test-cloud-Tumeh2014 input/samples-list-2-formats.txt")
-        print("  python olga-p2p-ot-wilocoxon.py input/test-cloud-Tumeh2014 input/new-samples --pipeline")
-        sys.exit(1)
-
-    barycenter_folder = Path(sys.argv[1]).expanduser()
-    samples_path = Path(sys.argv[2]).expanduser()
-
-    # Defaults (mirrors olga-p2b-ot.py)
-    freq_column = "pgen"
-    weights_column = "duplicate_frequency_percent"
-    barycenter_file = "barycenter.npz"
-    pipeline_mode = False
-    statistics_only = False
-    productive_filter = False
-    vdj_filter = False
-    vj_filter = False
-
-    i = 3
-    while i < len(sys.argv):
-        arg = sys.argv[i]
-
-        if arg == "--freq-column" and i + 1 < len(sys.argv):
-            freq_column = sys.argv[i + 1]
-            i += 2
-        elif arg == "--weights-column" and i + 1 < len(sys.argv):
-            weights_column = sys.argv[i + 1]
-            i += 2
-        elif arg == "--barycenter" and i + 1 < len(sys.argv):
-            barycenter_file = sys.argv[i + 1]
-            i += 2
-        elif arg == "--pipeline":
-            pipeline_mode = True
-            i += 1
-        elif arg == "--statistics-only":
-            statistics_only = True
-            i += 1
-        elif arg == "--productive-filter":
-            productive_filter = True
-            i += 1
-        elif arg == "--vdj-filter":
-            vdj_filter = True
-            i += 1
-        elif arg == "--vj-filter":
-            vj_filter = True
-            i += 1
-        else:
-            print(f"Error: Unknown argument or invalid format '{arg}'")
-            sys.exit(1)
+    args = parse_args()
+    barycenter_folder = Path(args.barycenter_folder).expanduser()
+    samples_path = Path(args.samples).expanduser()
+    freq_column = args.freq_column
+    weights_column = args.weights_column
+    barycenter_file = args.barycenter_file
+    pipeline_mode = args.pipeline_mode
+    statistics_only = args.statistics_only
+    productive_filter = args.productive_filter
+    vdj_filter = args.vdj_filter
+    vj_filter = args.vj_filter
 
     if not barycenter_folder.exists() or not barycenter_folder.is_dir():
         print(f"Error: Barycenter folder does not exist: {barycenter_folder}")

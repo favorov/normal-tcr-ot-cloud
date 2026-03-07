@@ -7,6 +7,7 @@ Samples from different directories are color-coded.
 
 import sys
 import os
+import argparse
 from pathlib import Path
 import numpy as np
 import matplotlib.pyplot as plt
@@ -203,60 +204,42 @@ def _compute_pairwise_distances(files, freq_column, weights_column, productive_f
     return distances, extended_grid
 
 
+def parse_args():
+    """Parse CLI arguments."""
+    parser = argparse.ArgumentParser(
+        description="Simplified MDS visualization of sample distributions.",
+    )
+    parser.add_argument(
+        "samples",
+        help="Either folder with TSV files or text file with one TSV file path per line",
+    )
+    parser.add_argument("--freq-column", default="pgen", dest="freq_column")
+    parser.add_argument(
+        "--weights-column",
+        default="duplicate_frequency_percent",
+        dest="weights_column",
+    )
+    parser.add_argument(
+        "--output-plot",
+        default="ot-simple-p2p-mds-plot.png",
+        dest="output_plot",
+    )
+    parser.add_argument("--productive-filter", action="store_true", dest="productive_filter")
+    parser.add_argument("--vdj-filter", action="store_true", dest="vdj_filter")
+    parser.add_argument("--vj-filter", action="store_true", dest="vj_filter")
+    return parser.parse_args()
+
+
 def main():
     """Main function."""
-    if len(sys.argv) < 2 or sys.argv[1] in ["-h", "--help"]:
-        print("Usage: python olga-p2p-mds-plot-samples.py <samples> [options]")
-        print("\nParameters:")
-        print("  samples               : Either:")
-        print("                          - Folder with TSV files")
-        print("                          - Text file with one TSV file path per line (with optional labels)")
-        print("  --freq-column <col>   : Column index or name for frequencies (default: pgen)")
-        print("  --weights-column <col>: Column index or name for weights, or 'off' (default: duplicate_frequency_percent)")
-        print("  --output-plot <file>  : Output plot filename (default: ot-simple-mds-plot.png)")
-        print("  --productive-filter   : Filter only productive sequences (if productive column exists)")
-        print("  --vdj-filter          : Require non-empty v_call/d_call/j_call for existing columns")
-        print("  --vj-filter           : Require non-empty v_call/j_call for existing columns")
-        print("\nOutput:")
-        print("  MDS visualization with points color-coded by source directory")
-        print("  Plot saved in samples folder (or parent folder if samples is a file list)")
-        print("\nExamples:")
-        print("  python olga-p2p-mds-plot-samples.py input/samples-folder")
-        print("  python olga-p2p-mds-plot-samples.py samples_list.txt --output-plot mds.png")
-        sys.exit(1 if len(sys.argv) < 2 else 0)
-
-    samples_path = Path(sys.argv[1])
-
-    freq_column = "pgen"
-    weights_column = "duplicate_frequency_percent"
-    output_plot = "ot-simple-p2p-mds-plot.png"
-    productive_filter = False
-    vdj_filter = False
-    vj_filter = False
-
-    i = 2
-    while i < len(sys.argv):
-        arg = sys.argv[i]
-        if arg == "--freq-column" and i + 1 < len(sys.argv):
-            freq_column = sys.argv[i + 1]
-            i += 2
-        elif arg == "--weights-column" and i + 1 < len(sys.argv):
-            weights_column = sys.argv[i + 1]
-            i += 2
-        elif arg == "--output-plot" and i + 1 < len(sys.argv):
-            output_plot = sys.argv[i + 1]
-            i += 2
-        elif arg == "--productive-filter":
-            productive_filter = True
-            i += 1
-        elif arg == "--vdj-filter":
-            vdj_filter = True
-            i += 1
-        elif arg == "--vj-filter":
-            vj_filter = True
-            i += 1
-        else:
-            i += 1
+    args = parse_args()
+    samples_path = Path(args.samples)
+    freq_column = args.freq_column
+    weights_column = args.weights_column
+    output_plot = args.output_plot
+    productive_filter = args.productive_filter
+    vdj_filter = args.vdj_filter
+    vj_filter = args.vj_filter
 
     # Get TSV files
     samples_files, output_folder, custom_labels = _load_sample_files(samples_path)

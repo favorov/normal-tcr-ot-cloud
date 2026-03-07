@@ -44,13 +44,13 @@
 
 **Запрос пользователя:** "Это будет новый скрипт, ключи - фолдер с файлами и барицентром, фолдер c сэмплами, которые надо картировать по отношению к барицентру, и ключи колонок с теми же умолчаниями. Считаем расстояния от всех файлов до барицентра, рисуем распределение boxplot для тех файлов, для которых построен барицентром, тёмно-зелёным (это нормальные сэмплы) и туда же оранжевыми точками - расстояния от сэмплов, которые мы картируем, до барицентра."
 
-#### Создание olga-boxplot-samples-ot-2pb.py
+#### Создание olga-p2b-boxplot-samples-ot.py
 
 **Назначение:** Визуализация расстояний до баранцентра с отличием между нормальными сэмплами (построившими баранцентр) и картируемыми сэмплами.
 
 **Основные параметры:**
 ```bash
-python3 olga-boxplot-samples-ot-2pb.py <barycenter_folder> <samples_folder> [options]
+python3 olga-p2b-boxplot-samples-ot.py <barycenter_folder> <samples_folder> [options]
 ```
 
 ---
@@ -62,7 +62,7 @@ python3 olga-boxplot-samples-ot-2pb.py <barycenter_folder> <samples_folder> [opt
 **Запрос:** Переименовать `samples_folder` в `samples` и разрешить список файлов.
 
 **Реализация:** в скриптах
-- `olga-boxplot-samples-ot-2pb.py`
+- `olga-p2b-boxplot-samples-ot.py`
 - `olga-mds-plot-samples.py`
 - `olga-samples-p2b-pval.py`
 
@@ -115,10 +115,10 @@ python3 olga-boxplot-samples-ot-2pb.py <barycenter_folder> <samples_folder> [opt
 **Примеры использования:**
 ```bash
 # Базовый вариант
-python3 olga-boxplot-samples-ot-2pb.py input/test-cloud-Tumeh2014 input/samples_to_map
+python3 olga-p2b-boxplot-samples-ot.py input/test-cloud-Tumeh2014 input/samples_to_map
 
 # С весами
-python3 olga-boxplot-samples-ot-2pb.py input/test-cloud-Tumeh2014 input/samples_to_map \
+python3 olga-p2b-boxplot-samples-ot.py input/test-cloud-Tumeh2014 input/samples_to_map \
     --weights-column duplicate_frequency_percent
 
 # С кастомным файлом выходной картинки (сохраняется в samples_to_map)
@@ -126,7 +126,7 @@ python3 olga-boxplot-samples-ot-2bp.py input/test-cloud-Tumeh2014 input/samples_
     --output-plot my_distances.png
 
 # С полным путём
-python3 olga-boxplot-samples-ot-2pb.py input/test-cloud-Tumeh2014 input/samples_to_map \
+python3 olga-p2b-boxplot-samples-ot.py input/test-cloud-Tumeh2014 input/samples_to_map \
     --output-plot ~/results/comparison.png
 ```
 
@@ -142,14 +142,14 @@ python3 olga-boxplot-samples-ot-2pb.py input/test-cloud-Tumeh2014 input/samples_
 **Примеры:**
 ```bash
 # Сохраняется в input/samples_to_map/ot-distance-boxplot.png
-python3 olga-boxplot-samples-ot-2pb.py input/test-cloud-Tumeh2014 input/samples_to_map
+python3 olga-p2b-boxplot-samples-ot.py input/test-cloud-Tumeh2014 input/samples_to_map
 
 # Сохраняется в input/samples_to_map/comparison.png
-python3 olga-boxplot-samples-ot-2pb.py input/test-cloud-Tumeh2014 input/samples_to_map \
+python3 olga-p2b-boxplot-samples-ot.py input/test-cloud-Tumeh2014 input/samples_to_map \
     --output-plot comparison.png
 
 # Сохраняется в ~/results/plot.png
-python3 olga-boxplot-samples-ot-2pb.py input/test-cloud-Tumeh2014 input/samples_to_map \
+python3 olga-p2b-boxplot-samples-ot.py input/test-cloud-Tumeh2014 input/samples_to_map \
     --output-plot ~/results/plot.png
 ```
 
@@ -175,7 +175,7 @@ python3 olga-boxplot-samples-ot-2pb.py input/test-cloud-Tumeh2014 input/samples_
 
 ### Файлы, изменённые в сессии
 
-1. **olga-boxplot-samples-ot-2pb.py** (новый скрипт)
+1. **olga-p2b-boxplot-samples-ot.py** (новый скрипт)
    - Вычисление расстояний для двух наборов сэмплов
    - Визуализация с боксплотом и оранжевыми точками
    - Параметр --output-plot для управления выходом
@@ -210,7 +210,7 @@ python3 olga-plot-barycenter.py input/test-cloud-Tumeh2014 --output-plot my_plot
 python3 olga-plot-barycenter.py input/test-cloud-Tumeh2014 --output-plot ~/results/barycenter.png
 ```
 
-**Результат:** Оба скрипта визуализации (`olga-plot-barycenter.py` и `olga-boxplot-samples-ot-2pb.py`) теперь имеют единообразный интерфейс для управления выходными файлами.
+**Результат:** Оба скрипта визуализации (`olga-plot-barycenter.py` и `olga-p2b-boxplot-samples-ot.py`) теперь имеют единообразный интерфейс для управления выходными файлами.
 
 ### Совместимость
 
@@ -333,7 +333,7 @@ python3 olga-mds-plot-samples.py input/test-cloud-Tumeh2014 input/samples_to_map
 2. ✅ `olga-plot-barycenter.py` — визуализация барицентра
 3. ✅ `olga-p2p-ot.py` — попарные расстояния
 4. ✅ `olga-p2b-ot.py` — расстояния до барицентра
-5. ✅ `olga-boxplot-samples-ot-2pb.py` — сравнение боксплотом
+5. ✅ `olga-p2b-boxplot-samples-ot.py` — сравнение боксплотом
 6. ✅ `olga-mds-plot-samples.py` — MDS визуализация
 7. ✅ `olga-samples-p2b-pval.py` — p-значения для сэмплов **NEW!**
 
@@ -455,7 +455,7 @@ python3 olga-samples-p2b-pval.py input/test-cloud-Tumeh2014 input/samples_to_map
 2. `olga-plot-barycenter.py` — визуализация баранцентра с распределениями
 3. `olga-p2p-ot.py` — попарные расстояния между сэмплами
 4. `olga-p2b-ot.py` — расстояния от сэмплов до баранцентра
-5. `olga-boxplot-samples-ot-2pb.py` — боксплот сравнения двух наборов сэмплов
+5. `olga-p2b-boxplot-samples-ot.py` — боксплот сравнения двух наборов сэмплов
 6. `olga-mds-plot-samples.py` — MDS визуализация (пространственные отношения)
 7. `olga-samples-p2b-pval.py` — статистическая значимость расстояний до баранцентра
 
@@ -1341,7 +1341,7 @@ python3 olga-p2b-ot.py ... --weights-column duplicate_frequency_p
 **Запрос:** Переименовать `samples_folder` в `samples` и разрешить список файлов.
 
 **Реализация:** Добавлена функция `_load_sample_files()` в три скрипта:
-- `olga-boxplot-samples-ot-2pb.py`
+- `olga-p2b-boxplot-samples-ot.py`
 - `olga-mds-plot-samples.py`
 - `olga-samples-p2b-pval.py`
 
@@ -1362,7 +1362,7 @@ python3 olga-p2b-ot.py ... --weights-column duplicate_frequency_p
 
 **Увеличение размеров фигур (2x на каждой оси):**
 - `olga-plot-barycenter.py`: 13×7 → 26×14 дюймов
-- `olga-boxplot-samples-ot-2pb.py`: 8×6 → 16×12 дюймов
+- `olga-p2b-boxplot-samples-ot.py`: 8×6 → 16×12 дюймов
 - `olga-mds-plot-samples.py`: 12×10 → 24×20 дюймов
 
 Размеры маркеров и шрифтов остались прежние → большее расстояние между элементами на пиксели.
@@ -1422,7 +1422,7 @@ ax.text(
 **Запрос:** Переименовать `samples_folder` в `samples` и разрешить список файлов.
 
 **Реализация:** Добавлена функция `_load_sample_files()` в три скрипта:
-- `olga-boxplot-samples-ot-2pb.py`
+- `olga-p2b-boxplot-samples-ot.py`
 - `olga-mds-plot-samples.py`
 - `olga-samples-p2b-pval.py`
 
@@ -1443,7 +1443,7 @@ ax.text(
 
 **Увеличение размеров фигур (2x на каждой оси):**
 - `olga-plot-barycenter.py`: 13×7 → 26×14 дюймов
-- `olga-boxplot-samples-ot-2pb.py`: 8×6 → 16×12 дюймов
+- `olga-p2b-boxplot-samples-ot.py`: 8×6 → 16×12 дюймов
 - `olga-mds-plot-samples.py`: 12×10 → 24×20 дюймов
 
 Размеры маркеров и шрифтов остались прежние → большее расстояние между элементами на пиксели.
@@ -1476,7 +1476,7 @@ ax.text(
 2. `olga-plot-barycenter.py` — визуализация (размер 26×14)
 3. `olga-p2p-ot.py` — попарные расстояния
 4. `olga-p2b-ot.py` — расстояния до баранцентра
-5. `olga-boxplot-samples-ot-2pb.py` — боксплот (размер 16×12, метки над точками)
+5. `olga-p2b-boxplot-samples-ot.py` — боксплот (размер 16×12, метки над точками)
 6. `olga-mds-plot-samples.py` — MDS визуализация (размер 24×20, метки ближе)
 7. `olga-samples-p2b-pval.py` — p-значения с двойной меткой (имя + файл)
 
@@ -1503,7 +1503,7 @@ ax.text(
 **Реализация:** 
 
 1. **Обновлена функция `_load_sample_files()` в трёх скриптах:**
-   - `olga-boxplot-samples-ot-2pb.py`
+   - `olga-p2b-boxplot-samples-ot.py`
    - `olga-mds-plot-samples.py`
    - `olga-samples-p2b-pval.py`
 
@@ -1608,7 +1608,7 @@ Significant (p < 0.01): 3 raw p-values, 2 after Bonferroni
 **Изменения в коде:**
 
 1. **Функция `_load_sample_files()` обновлена во всех трёх скриптах:**
-   - `olga-boxplot-samples-ot-2pb.py`
+   - `olga-p2b-boxplot-samples-ot.py`
    - `olga-mds-plot-samples.py`
    - `olga-samples-p2b-pval.py`
 
@@ -1669,7 +1669,7 @@ Significant (p < 0.01): 3 raw p-values, 2 after Bonferroni
 **Запрос:** Переименовать `samples_folder` в `samples` и разрешить список файлов.
 
 **Реализация:** Добавлена функция `_load_sample_files()` в три скрипта:
-- `olga-boxplot-samples-ot-2pb.py`
+- `olga-p2b-boxplot-samples-ot.py`
 - `olga-mds-plot-samples.py`
 - `olga-samples-p2b-pval.py`
 
@@ -1690,7 +1690,7 @@ Significant (p < 0.01): 3 raw p-values, 2 after Bonferroni
 
 **Увеличение размеров фигур (2x на каждой оси):**
 - `olga-plot-barycenter.py`: 13×7 → 26×14 дюймов
-- `olga-boxplot-samples-ot-2pb.py`: 8×6 → 16×12 дюймов
+- `olga-p2b-boxplot-samples-ot.py`: 8×6 → 16×12 дюймов
 - `olga-mds-plot-samples.py`: 12×10 → 24×20 дюймов
 
 Размеры маркеров и шрифтов остались прежние → большее расстояние между элементами на пиксели.
@@ -1723,7 +1723,7 @@ Significant (p < 0.01): 3 raw p-values, 2 after Bonferroni
 2. `olga-plot-barycenter.py` — визуализация (размер 26×14)
 3. `olga-p2p-ot.py` — попарные расстояния
 4. `olga-p2b-ot.py` — расстояния до баранцентра
-5. `olga-boxplot-samples-ot-2pb.py` — боксплот (размер 16×12, метки над точками)
+5. `olga-p2b-boxplot-samples-ot.py` — боксплот (размер 16×12, метки над точками)
 6. `olga-mds-plot-samples.py` — MDS визуализация (размер 24×20, метки ближе)
 7. `olga-samples-p2b-pval.py` — p-значения с двойной меткой (имя + файл)
 
@@ -1764,7 +1764,7 @@ Significant (p < 0.01): 3 raw p-values, 2 after Bonferroni
 3. **olga-plot-barycenter.py**
 4. **olga-p2p-ot.py**
 5. **olga-p2b-ot.py**
-6. **olga-boxplot-samples-ot-2pb.py**
+6. **olga-p2b-boxplot-samples-ot.py**
 7. **olga-mds-plot-samples.py**
 8. **olga-samples-p2b-pval.py**
 
@@ -1910,7 +1910,7 @@ def load_distribution(filepath, freq_column="pgen",
 3. ✅ **olga-plot-barycenter.py** — визуализация тяжести
 4. ✅ **olga-p2p-ot.py** — попарные расстояния
 5. ✅ **olga-p2b-ot.py** — расстояния до тяжести
-6. ✅ **olga-boxplot-samples-ot-2pb.py** — boxplot расстояний
+6. ✅ **olga-p2b-boxplot-samples-ot.py** — boxplot расстояний
 7. ✅ **olga-mds-plot-samples.py** — MDS визуализация
 8. ✅ **olga-samples-p2b-pval.py** — статистическая значимость
 9. ✅ **olga-simple-ot-mds-plot.py** — упрощённая MDS
@@ -2065,7 +2065,7 @@ python3 olga-p2p-ot.py input/ Patient01.tsv Patient02.tsv --all --productive-fil
    - `olga-p2b-ot.py`
    - `olga-p2p-ot.py`
    - `olga-p2p-mds-plot-samples.py`
-   - `olga-boxplot-samples-ot-2pb.py`
+   - `olga-p2b-boxplot-samples-ot.py`
    - `olga-p2b-mds-plot-samples-and-bc.py`
    - `olga-samples-p2b-pval.py`
    - `olga-barycenter-ot.py`

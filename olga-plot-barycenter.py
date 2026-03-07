@@ -6,6 +6,7 @@ Plot distributions from TSV files and their Wasserstein barycenter on a single f
 import sys
 import os
 import glob
+import argparse
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
@@ -165,61 +166,37 @@ def discretize_on_grid(values, weights, grid):
     return hist
 
 
+def parse_args():
+    """Parse CLI arguments."""
+    parser = argparse.ArgumentParser(
+        description="Plot distributions from TSV files and their Wasserstein barycenter.",
+    )
+    parser.add_argument("input_folder", help="Path to folder containing TSV files")
+    parser.add_argument("--barycenter", default="barycenter.npz", dest="barycenter_file")
+    parser.add_argument("--freq-column", default="pgen", dest="freq_column")
+    parser.add_argument(
+        "--weights-column",
+        default="duplicate_frequency_percent",
+        dest="weights_column",
+    )
+    parser.add_argument("--output-plot", default="barycenter_plot.png", dest="output_plot")
+    parser.add_argument("--productive-filter", action="store_true", dest="productive_filter")
+    parser.add_argument("--vdj-filter", action="store_true", dest="vdj_filter")
+    parser.add_argument("--vj-filter", action="store_true", dest="vj_filter")
+    return parser.parse_args()
+
+
 def main():
     """Main function."""
-    if len(sys.argv) < 2:
-        print("Usage: python olga-plot-barycenter.py <input_folder> [--barycenter <file>] [--weights-column <col>] [--freq-column <col>] [--output-plot <file>] [--productive-filter] [--vdj-filter] [--vj-filter]")
-        print("\nParameters:")
-        print("  input_folder        : Path to folder containing TSV files")
-        print("  --barycenter <file> : Path to barycenter NPZ file (default: barycenter.npz in input_folder)")
-        print("  --freq-column       : Column for frequencies (default: pgen)")
-        print("  --weights-column    : Column for weights (default: duplicate_frequency_percent)")
-        print("  --output-plot <file>: Output plot filename (default: barycenter_plot.png)")
-        print("  --productive-filter : Filter only productive sequences (default: off)")
-        print("  --vdj-filter        : Require non-empty v_call/d_call/j_call for existing columns")
-        print("  --vj-filter         : Require non-empty v_call/j_call for existing columns")
-        print("\nExamples:")
-        print("  python olga-plot-barycenter.py input/test-cloud-Tumeh2014")
-        print("  python olga-plot-barycenter.py input/test-cloud-Tumeh2014 --barycenter ~/data/mybarycenter.npz")
-        print("  python olga-plot-barycenter.py input/test-cloud-Tumeh2014 --output-plot my_plot.png")
-        sys.exit(1)
-    
-    input_folder = sys.argv[1]
-    barycenter_file = "barycenter.npz"
-    freq_column = "pgen"
-    weights_column = "duplicate_frequency_percent"
-    output_plot = "barycenter_plot.png"
-    productive_filter = False
-    vdj_filter = False
-    vj_filter = False
-    
-    # Parse remaining arguments
-    i = 2
-    while i < len(sys.argv):
-        if sys.argv[i] == "--freq-column" and i + 1 < len(sys.argv):
-            freq_column = sys.argv[i + 1]
-            i += 2
-        elif sys.argv[i] == "--weights-column" and i + 1 < len(sys.argv):
-            weights_column = sys.argv[i + 1]
-            i += 2
-        elif sys.argv[i] == "--barycenter" and i + 1 < len(sys.argv):
-            barycenter_file = sys.argv[i + 1]
-            i += 2
-        elif sys.argv[i] == "--output-plot" and i + 1 < len(sys.argv):
-            output_plot = sys.argv[i + 1]
-            i += 2
-        elif sys.argv[i] == "--productive-filter":
-            productive_filter = True
-            i += 1
-        elif sys.argv[i] == "--vdj-filter":
-            vdj_filter = True
-            i += 1
-        elif sys.argv[i] == "--vj-filter":
-            vj_filter = True
-            i += 1
-        else:
-            print(f"Error: Unknown argument '{sys.argv[i]}'")
-            sys.exit(1)
+    args = parse_args()
+    input_folder = args.input_folder
+    barycenter_file = args.barycenter_file
+    freq_column = args.freq_column
+    weights_column = args.weights_column
+    output_plot = args.output_plot
+    productive_filter = args.productive_filter
+    vdj_filter = args.vdj_filter
+    vj_filter = args.vj_filter
     
     # Determine path to barycenter file
     if os.path.isabs(barycenter_file) or barycenter_file.startswith('~'):

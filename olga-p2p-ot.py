@@ -5,6 +5,7 @@ Supports two-file comparison and all-pairs comparison from a file list.
 """
 
 import sys
+import argparse
 import numpy as np
 from pathlib import Path
 from itertools import combinations
@@ -150,94 +151,55 @@ def print_results_pipeline(results):
         print(f"{distance:.10e}")
 
 
+def parse_args():
+    """Parse CLI arguments."""
+    parser = argparse.ArgumentParser(
+        description="Compute Wasserstein distances between TCR distributions.",
+    )
+    parser.add_argument(
+        "inputs",
+        nargs="+",
+        help=(
+            "Two TSV files for single-pair mode, or one file-list path with --all "
+            "for all-pairs mode"
+        ),
+    )
+    parser.add_argument("--freq-column", default="pgen", dest="freq_column")
+    parser.add_argument(
+        "--weights-column",
+        default="duplicate_frequency_percent",
+        dest="weights_column",
+    )
+    parser.add_argument("--n-grid", type=int, default=200, dest="n_grid")
+    parser.add_argument("--all", action="store_true", dest="all_mode")
+    parser.add_argument("--pipeline", action="store_true", dest="pipeline_mode")
+    parser.add_argument("--statistics-only", action="store_true", dest="statistics_only")
+    parser.add_argument("--productive-filter", action="store_true", dest="productive_filter")
+    parser.add_argument("--vdj-filter", action="store_true", dest="vdj_filter")
+    parser.add_argument("--vj-filter", action="store_true", dest="vj_filter")
+    args = parser.parse_args()
+
+    if args.n_grid <= 1:
+        parser.error("--n-grid must be > 1")
+    if args.statistics_only:
+        args.all_mode = True
+
+    return args
+
+
 def main():
     """Main function."""
-    # Determine help condition more flexibly
-    if len(sys.argv) < 2 or (len(sys.argv) == 2 and sys.argv[1] in ["-h", "--help"]):
-        print("Usage: python olga-p2p-ot.py [file1.tsv] [file2.tsv] [options]")
-        print("\nModes:")
-        print("  Two files:        python olga-p2p-ot.py <file1.tsv> <file2.tsv>")
-        print("                    → Distance between two specific files")
-        print()
-        print("  All-pairs:        python olga-p2p-ot.py <files_list.txt> --all")
-        print("                    → All pairwise distances (upper triangle) from file list")
-        print("                    → In list file, only first token per line is used as filename")
-        print()
-        print("Parameters:")
-        print("  --freq-column <col>    : Column index or name for frequencies (default: pgen)")
-        print("  --weights-column <col> : Column index or name for weights, or 'off' (default: duplicate_frequency_percent)")
-        print("  --n-grid <n>           : Number of grid points (default: 200)")
-        print("  --all                  : Enable all-pairs mode from file list")
-        print("  --pipeline             : Output only distances, one per line (for scripting)")
-        print("  --statistics-only      : Enable all-pairs mode and show only statistics")
-        print("  --productive-filter    : Filter only productive sequences (if productive column exists)")
-        print("  --vdj-filter           : Require non-empty v_call/d_call/j_call for existing columns")
-        print("  --vj-filter            : Require non-empty v_call/j_call for existing columns")
-        print()
-        print("Examples:")
-        print("  python olga-p2p-ot.py input/test-cloud-Tumeh2014/Patient01.tsv input/test-cloud-Tumeh2014/Patient02.tsv")
-        print("  python olga-p2p-ot.py input/samples-list-2-formats.txt --all")
-        print("  python olga-p2p-ot.py input/samples-list-2-formats.txt --all --statistics-only")
-        print("  python olga-p2p-ot.py input/samples-list-2-formats.txt --all --pipeline")
-        sys.exit(1 if len(sys.argv) < 2 else 0)
-    
-    freq_column = "pgen"
-    weights_column = "duplicate_frequency_percent"
-    n_grid = 200
-    pipeline_mode = False
-    all_mode = False
-    statistics_only = False
-    productive_filter = False
-    vdj_filter = False
-    vj_filter = False
-    positional_args = []
-    
-    # Parse arguments
-    i = 1
-    while i < len(sys.argv):
-        arg = sys.argv[i]
-        
-        if arg == "--freq-column" and i + 1 < len(sys.argv):
-            freq_column = sys.argv[i + 1]
-            i += 2
-        elif arg == "--weights-column" and i + 1 < len(sys.argv):
-            weights_column = sys.argv[i + 1]
-            i += 2
-        elif arg == "--n-grid" and i + 1 < len(sys.argv):
-            try:
-                n_grid = int(sys.argv[i + 1])
-                if n_grid <= 1:
-                    print("Error: --n-grid must be > 1")
-                    sys.exit(1)
-            except ValueError:
-                print(f"Error: --n-grid must be an integer")
-                sys.exit(1)
-            i += 2
-        elif arg == "--pipeline":
-            pipeline_mode = True
-            i += 1
-        elif arg == "--all":
-            all_mode = True
-            i += 1
-        elif arg == "--statistics-only":
-            statistics_only = True
-            all_mode = True
-            i += 1
-        elif arg == "--productive-filter":
-            productive_filter = True
-            i += 1
-        elif arg == "--vdj-filter":
-            vdj_filter = True
-            i += 1
-        elif arg == "--vj-filter":
-            vj_filter = True
-            i += 1
-        elif arg.startswith("--"):
-            print(f"Error: Unknown argument '{arg}'")
-            sys.exit(1)
-        else:
-            positional_args.append(arg)
-            i += 1
+    args = parse_args()
+    freq_column = args.freq_column
+    weights_column = args.weights_column
+    n_grid = args.n_grid
+    pipeline_mode = args.pipeline_mode
+    all_mode = args.all_mode
+    statistics_only = args.statistics_only
+    productive_filter = args.productive_filter
+    vdj_filter = args.vdj_filter
+    vj_filter = args.vj_filter
+    positional_args = args.inputs
     
     try:
         # Determine mode and compute

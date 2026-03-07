@@ -6,6 +6,7 @@ Calculate Wasserstein barycenter of distributions from all TSV files in a folder
 import sys
 import os
 import glob
+import argparse
 import pandas as pd
 import numpy as np
 import ot
@@ -123,69 +124,42 @@ def load_distribution(filepath, freq_column, weights_column, productive_filter=F
     return sample_values, weights
 
 
+def parse_args():
+    """Parse CLI arguments."""
+    parser = argparse.ArgumentParser(
+        description="Calculate Wasserstein barycenter of distributions from all TSV files in a folder.",
+    )
+    parser.add_argument("input_folder", help="Path to folder containing TSV files")
+    parser.add_argument("--freq-column", default="pgen", dest="freq_column")
+    parser.add_argument(
+        "--weights-column",
+        default="duplicate_frequency_percent",
+        dest="weights_column",
+    )
+    parser.add_argument("--n-grid", type=int, default=200, dest="n_grid")
+    parser.add_argument("--barycenter", default="barycenter.npz", dest="barycenter_file")
+    parser.add_argument("--productive-filter", action="store_true", dest="productive_filter")
+    parser.add_argument("--vdj-filter", action="store_true", dest="vdj_filter")
+    parser.add_argument("--vj-filter", action="store_true", dest="vj_filter")
+    args = parser.parse_args()
+
+    if args.n_grid <= 1:
+        parser.error("--n-grid must be > 1")
+
+    return args
+
+
 def main():
     """Main function."""
-    if len(sys.argv) < 2:
-        print("Usage: python olga-barycenter-ot.py <input_folder> [--freq-column <col>] [--weights-column <col>] [--n-grid <n>] [--barycenter <file>] [--productive-filter] [--vdj-filter] [--vj-filter]")
-        print("\nParameters:")
-        print("  input_folder      : Path to folder containing TSV files")
-        print("  --freq-column     : Column index (0-based) or column name for sample values (default: pgen)")
-        print("  --weights-column  : Column index (0-based) or column name for weights, or 'off' (default: duplicate_frequency_percent)")
-        print("  --n-grid          : Number of grid points (default: 200)")
-        print("  --barycenter      : Output filename for barycenter (default: barycenter.npz)")
-        print("  --productive-filter: Filter only productive sequences (default: off)")
-        print("  --vdj-filter      : Require non-empty v_call/d_call/j_call for existing columns")
-        print("  --vj-filter       : Require non-empty v_call/j_call for existing columns")
-        print("\nExamples:")
-        print("  python olga-barycenter-ot.py input/test-cloud-Tumeh2014")
-        print("  python olga-barycenter-ot.py input/test-cloud-Tumeh2014 --freq-column pgen --weights-column duplicate_frequency_percent")
-        print("  python olga-barycenter-ot.py input/test-cloud-Tumeh2014 --n-grid 500")
-        print("  python olga-barycenter-ot.py input/test-cloud-Tumeh2014 --barycenter my_barycenter.npz")
-        sys.exit(1)
-    
-    input_folder = sys.argv[1]
-    freq_column = "pgen"
-    weights_column = "duplicate_frequency_percent"
-    n_grid = 200
-    barycenter_file = "barycenter.npz"
-    productive_filter = False
-    vdj_filter = False
-    vj_filter = False
-    
-    # Parse named arguments
-    i = 2
-    while i < len(sys.argv):
-        if sys.argv[i] == "--freq-column" and i + 1 < len(sys.argv):
-            freq_column = sys.argv[i + 1]
-            i += 2
-        elif sys.argv[i] == "--weights-column" and i + 1 < len(sys.argv):
-            weights_column = sys.argv[i + 1]
-            i += 2
-        elif sys.argv[i] == "--n-grid" and i + 1 < len(sys.argv):
-            try:
-                n_grid = int(sys.argv[i + 1])
-            except ValueError:
-                print(f"Error: --n-grid must be an integer, got '{sys.argv[i + 1]}'")
-                sys.exit(1)
-            if n_grid <= 1:
-                print("Error: --n-grid must be > 1")
-                sys.exit(1)
-            i += 2
-        elif sys.argv[i] == "--barycenter" and i + 1 < len(sys.argv):
-            barycenter_file = sys.argv[i + 1]
-            i += 2
-        elif sys.argv[i] == "--productive-filter":
-            productive_filter = True
-            i += 1
-        elif sys.argv[i] == "--vdj-filter":
-            vdj_filter = True
-            i += 1
-        elif sys.argv[i] == "--vj-filter":
-            vj_filter = True
-            i += 1
-        else:
-            print(f"Error: Unknown argument '{sys.argv[i]}'")
-            sys.exit(1)
+    args = parse_args()
+    input_folder = args.input_folder
+    freq_column = args.freq_column
+    weights_column = args.weights_column
+    n_grid = args.n_grid
+    barycenter_file = args.barycenter_file
+    productive_filter = args.productive_filter
+    vdj_filter = args.vdj_filter
+    vj_filter = args.vj_filter
     
     # Find all TSV files
     tsv_files = sorted(glob.glob(os.path.join(input_folder, "*.tsv")))

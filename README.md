@@ -23,7 +23,7 @@ pip install scipy
 2. `olga-plot-barycenter.py` — visualize barycenter
 3. `olga-p2p-ot.py` — pairwise distances between distributions
 4. `olga-p2b-ot.py` — distances from distributions to barycenter
-5. `olga-boxplot-samples-ot-2pb.py` — compare sample distances with boxplot
+5. `olga-p2b-boxplot-samples-ot.py` — compare sample distances with boxplot
 6. `olga-p2b-mds-plot-samples-and-bc.py` — MDS visualization of samples vs barycenter
 7. `olga-p2p-mds-plot-samples.py` — simplified MDS visualization (no barycenter)
 8. `olga-samples-p2b-pval.py` — statistical significance of sample distances
@@ -268,14 +268,14 @@ python3 olga-p2p-ot-wilcoxon.py input/test-cloud-Tumeh2014 \
 
 ---
 
-## olga-boxplot-samples-ot-2pb.py
+## olga-p2b-boxplot-samples-ot.py
 
 Compares distances from two sample sets to a barycenter using a boxplot.
 
 ### Usage
 
 ```bash
-python3 olga-boxplot-samples-ot-2pb.py <barycenter_folder> <samples> [options]
+python3 olga-p2b-boxplot-samples-ot.py <barycenter_folder> <samples> [options]
 ```
 
 ### Parameters
@@ -293,9 +293,9 @@ python3 olga-boxplot-samples-ot-2pb.py <barycenter_folder> <samples> [options]
 ### Examples
 
 ```bash
-python3 olga-boxplot-samples-ot-2pb.py input/test-cloud-Tumeh2014 input/new-samples
+python3 olga-p2b-boxplot-samples-ot.py input/test-cloud-Tumeh2014 input/new-samples
 
-python3 olga-boxplot-samples-ot-2pb.py input/test-cloud-Tumeh2014 samples_list.txt \
+python3 olga-p2b-boxplot-samples-ot.py input/test-cloud-Tumeh2014 samples_list.txt \
     --weights-column duplicate_frequency_percent --output-plot comparison.png
 ```
 
@@ -541,7 +541,7 @@ cat > my_samples.txt << EOF
 EOF
 
 # Use in any visualization/analysis script
-python3 olga-boxplot-samples-ot-2pb.py input/test-cloud-Tumeh2014 my_samples.txt
+python3 olga-p2b-boxplot-samples-ot.py input/test-cloud-Tumeh2014 my_samples.txt
 python3 olga-p2b-mds-plot-samples-and-bc.py input/test-cloud-Tumeh2014 my_samples.txt
 python3 olga-samples-p2b-pval.py input/test-cloud-Tumeh2014 my_samples.txt
 ```

@@ -7,6 +7,7 @@ using a null hypothesis model fitted to normal samples.
 
 import sys
 import os
+import argparse
 from pathlib import Path
 import numpy as np
 from scipy import stats
@@ -266,68 +267,44 @@ def compute_pvalue(distance, model):
         raise ValueError(f"Unknown model type: {model['model_type']}")
 
 
+def parse_args():
+    """Parse CLI arguments."""
+    parser = argparse.ArgumentParser(
+        description="Compute p-values for sample distributions relative to a barycenter.",
+    )
+    parser.add_argument("barycenter_folder", help="Folder containing TSV files and barycenter.npz")
+    parser.add_argument(
+        "samples",
+        help="Either folder with TSV files to evaluate or text file with one TSV path per line",
+    )
+    parser.add_argument("--freq-column", default="pgen", dest="freq_column")
+    parser.add_argument(
+        "--weights-column",
+        default="duplicate_frequency_percent",
+        dest="weights_column",
+    )
+    parser.add_argument("--barycenter", default="barycenter.npz", dest="barycenter_file")
+    parser.add_argument("--productive-filter", action="store_true", dest="productive_filter")
+    parser.add_argument("--vdj-filter", action="store_true", dest="vdj_filter")
+    parser.add_argument("--vj-filter", action="store_true", dest="vj_filter")
+    return parser.parse_args()
+
+
 # ============================================================================
 # Main script
 # ============================================================================
 
 def main():
     """Main function."""
-    if len(sys.argv) < 3 or sys.argv[1] in ["-h", "--help"]:
-        print("Usage: python olga-samples-p2b-pval.py <barycenter_folder> <samples_folder> [options]")
-        print("\nParameters:")
-        print("  barycenter_folder     : Folder containing TSV files and barycenter.npz")
-        print("  samples               : Either:")
-        print("                          - Folder with TSV files to evaluate")
-        print("                          - Text file with one TSV file path per line")
-        print("  --freq-column <col>   : Column index or name for frequencies (default: pgen)")
-        print("  --weights-column <col>: Column index or name for weights, or 'off' (default: duplicate_frequency_percent)")
-        print("  --barycenter <file>   : Barycenter file (default: barycenter.npz)")
-        print("  --productive-filter   : Filter only productive sequences (default: off)")
-        print("  --vdj-filter          : Require non-empty v_call/d_call/j_call for existing columns")
-        print("  --vj-filter           : Require non-empty v_call/j_call for existing columns")
-        print("\nOutput:")
-        print("  Table with sample names, distances, and p-values")
-        print("  Both raw and Bonferroni-adjusted p-values")
-        print("  Results sorted by Bonferroni-adjusted p-value (most significant first)")
-        print("\nExamples:")
-        print("  python olga-samples-p2b-pval.py input/test-cloud-Tumeh2014 input/new-samples")
-        print("  python olga-samples-p2b-pval.py input/test-cloud-Tumeh2014 samples_list.txt \\")
-        print("    --weights-column duplicate_frequency_percent")
-        sys.exit(1 if len(sys.argv) < 3 else 0)
-
-    barycenter_folder = Path(sys.argv[1])
-    samples_path = Path(sys.argv[2])
-
-    freq_column = "pgen"
-    weights_column = "duplicate_frequency_percent"
-    barycenter_file = "barycenter.npz"
-    productive_filter = False
-    vdj_filter = False
-    vj_filter = False
-
-    i = 3
-    while i < len(sys.argv):
-        arg = sys.argv[i]
-        if arg == "--freq-column" and i + 1 < len(sys.argv):
-            freq_column = sys.argv[i + 1]
-            i += 2
-        elif arg == "--weights-column" and i + 1 < len(sys.argv):
-            weights_column = sys.argv[i + 1]
-            i += 2
-        elif arg == "--barycenter" and i + 1 < len(sys.argv):
-            barycenter_file = sys.argv[i + 1]
-            i += 2
-        elif arg == "--productive-filter":
-            productive_filter = True
-            i += 1
-        elif arg == "--vdj-filter":
-            vdj_filter = True
-            i += 1
-        elif arg == "--vj-filter":
-            vj_filter = True
-            i += 1
-        else:
-            i += 1
+    args = parse_args()
+    barycenter_folder = Path(args.barycenter_folder)
+    samples_path = Path(args.samples)
+    freq_column = args.freq_column
+    weights_column = args.weights_column
+    barycenter_file = args.barycenter_file
+    productive_filter = args.productive_filter
+    vdj_filter = args.vdj_filter
+    vj_filter = args.vj_filter
 
     # Load barycenter
     barycenter_path = _resolve_barycenter_path(barycenter_folder, barycenter_file)
