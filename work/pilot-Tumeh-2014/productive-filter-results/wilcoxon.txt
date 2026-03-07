@@ -1,0 +1,83 @@
+Loading barycenter from: cloud-Tumeh2014-Base/barycenter.npz
+  Grid size: 200
+  Grid range: [1.421e-24, 3.541e-06]
+
+Sample files processed: 10
+Cloud files processed:  25
+
+====================================================================================================
+SAMPLE -> BARYCENTER WASSERSTEIN DISTANCES (sorted by distance, decreasing)
+====================================================================================================
+Label        File                                                      Distance    Samples
+----------------------------------------------------------------------------------------------------
+24P          Patient24_Post_tcr_pgen.tsv                           4.906273e+00        103
+23P          Patient23_Post_tcr_pgen.tsv                           4.273896e+00         54
+25P          Patient25_Post_tcr_pgen.tsv                           3.042168e+00         49
+18P          Patient18_Post_tcr_pgen.tsv                           2.955119e+00         55
+19P          Patient19_Post_tcr_pgen.tsv                           2.742244e+00         48
+16P          Patient16_Post_tcr_pgen.tsv                           2.588723e+00         53
+22P          Patient22_Post_tcr_pgen.tsv                           2.035128e+00         84
+20P          Patient20_Post_tcr_pgen.tsv                           1.740473e+00         54
+17P          Patient17_Post_tcr_pgen.tsv                           1.396677e+00         89
+21P          Patient21_Post_tcr_pgen.tsv                           1.076957e+00         77
+----------------------------------------------------------------------------------------------------
+STATISTICS
+----------------------------------------------------------------------------------------------------
+Count:        10
+Mean:         2.675766e+00
+Median:       2.665484e+00
+Std:          1.150257e+00
+Min:          1.076957e+00 (Patient21_Post_tcr_pgen.tsv)
+Max:          4.906273e+00 (Patient24_Post_tcr_pgen.tsv)
+Q1 (25%):     1.814137e+00
+Q3 (75%):     3.020406e+00
+
+====================================================================================================
+CLOUD -> BARYCENTER WASSERSTEIN DISTANCES (sorted by distance, decreasing)
+====================================================================================================
+Label        File                                                      Distance    Samples
+----------------------------------------------------------------------------------------------------
+23B          Patient23_Base_tcr_pgen.tsv                           3.224157e+00         43
+17B          Patient17_Base_tcr_pgen.tsv                           2.508780e+00         52
+19B          Patient19_Base_tcr_pgen.tsv                           2.444338e+00         94
+21B          Patient21_Base_tcr_pgen.tsv                           2.433438e+00         91
+16B          Patient16_Base_tcr_pgen.tsv                           2.352758e+00         48
+14B          Patient14_Base_tcr_pgen.tsv                           2.296013e+00         78
+10B          Patient10_Base_tcr_pgen.tsv                           2.266632e+00         94
+13B          Patient13_Base_tcr_pgen.tsv                           2.143930e+00         84
+15B          Patient15_Base_tcr_pgen.tsv                           1.674317e+00         51
+03B          Patient03_Base_tcr_pgen.tsv                           1.664515e+00         80
+09B          Patient09_Base_tcr_pgen.tsv                           1.579330e+00         86
+22B          Patient22_Base_tcr_pgen.tsv                           1.520015e+00         57
+24B          Patient24_Base_tcr_pgen.tsv                           1.446297e+00         64
+18B          Patient18_Base_tcr_pgen.tsv                           1.249839e+00         46
+05B          Patient05_Base_tcr_pgen.tsv                           1.170464e+00         86
+04B          Patient04_Base_tcr_pgen.tsv                           1.130629e+00         77
+12B          Patient12_Base_tcr_pgen.tsv                           1.054851e+00         74
+20B          Patient20_Base_tcr_pgen.tsv                           9.715437e-01         78
+11B          Patient11_Base_tcr_pgen.tsv                           8.371814e-01         84
+02B          Patient02_Base_tcr_pgen.tsv                           8.010687e-01         79
+01B          Patient01_Base_tcr_pgen.tsv                           7.809475e-01         85
+08B          Patient08_Base_tcr_pgen.tsv                           7.668643e-01         83
+25B          Patient25_Base_tcr_pgen.tsv                           5.624788e-01         23
+06B          Patient06_Base_tcr_pgen.tsv                           5.545556e-01         83
+07B          Patient07_Base_tcr_pgen.tsv                           5.317465e-01         79
+----------------------------------------------------------------------------------------------------
+STATISTICS
+----------------------------------------------------------------------------------------------------
+Count:        25
+Mean:         1.518668e+00
+Median:       1.446297e+00
+Std:          7.389905e-01
+Min:          5.317465e-01 (Patient07_Base_tcr_pgen.tsv)
+Max:          3.224157e+00 (Patient23_Base_tcr_pgen.tsv)
+Q1 (25%):     8.371814e-01
+Q3 (75%):     2.266632e+00
+
+====================================================================================================
+ONE-SIDED WILCOXON RANK-SUM TEST
+====================================================================================================
+Alternative hypothesis: cloud distances are smaller than sample distances
+U statistic:   49.000000
+One-sided p:  2.917876e-03
+====================================================================================================
