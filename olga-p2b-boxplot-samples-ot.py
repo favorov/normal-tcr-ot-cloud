@@ -112,7 +112,7 @@ def _compute_distances_to_barycenter(files, grid, barycenter_weights, freq_colum
 def main():
     """Main function."""
     if len(sys.argv) < 3 or sys.argv[1] in ["-h", "--help"]:
-        print("Usage: python olga-boxplot-samples-ot-2pb.py <barycenter_folder> <samples> [options]")
+        print("Usage: python olga-p2b-boxplot-samples-ot.py <barycenter_folder> <samples> [options]")
         print("\nParameters:")
         print("  barycenter_folder     : Folder containing TSV files and barycenter.npz")
         print("  samples               : Either:")
@@ -128,8 +128,8 @@ def main():
         print("\nOutput:")
         print("  Plot saved in samples folder (or parent folder if samples is a file list)")
         print("\nExamples:")
-        print("  python olga-boxplot-samples-ot-2pb.py input/test-cloud-Tumeh2014 input/new-samples")
-        print("  python olga-boxplot-samples-ot-2pb.py input/test-cloud-Tumeh2014 samples_list.txt \\")
+        print("  python olga-p2b-boxplot-samples-ot.py input/test-cloud-Tumeh2014 input/new-samples")
+        print("  python olga-p2b-boxplot-samples-ot.py input/test-cloud-Tumeh2014 samples_list.txt \\")
         print("    --weights-column duplicate_frequency_percent")
         sys.exit(1 if len(sys.argv) < 3 else 0)
 
