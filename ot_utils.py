@@ -334,6 +334,93 @@ def create_common_grid(values_list, n_grid=200, log_space=True):
     return grid
 
 
+def compute_lp_barycenter(values_list, weights_list, n_grid=200):
+    """
+    Compute Wasserstein barycenter with LP solver on a common log-spaced grid.
+
+    Parameters
+    ----------
+    values_list : list of np.ndarray
+        Support values for each input distribution.
+    weights_list : list of np.ndarray
+        Per-sample weights for each input distribution (same length as values_list).
+    n_grid : int
+        Number of grid points for common discretization.
+
+    Returns
+    -------
+    grid : np.ndarray
+        Common log-spaced support grid.
+    barycenter : np.ndarray
+        Barycenter weights on the grid.
+    """
+    if len(values_list) == 0:
+        raise ValueError("values_list must contain at least one distribution")
+    if len(values_list) != len(weights_list):
+        raise ValueError("values_list and weights_list must have the same length")
+    if n_grid <= 1:
+        raise ValueError("n_grid must be > 1")
+
+    grid = create_common_grid(values_list, n_grid=n_grid, log_space=True)
+    discretized_distributions = [
+        discretize_distribution(values, weights, grid)
+        for values, weights in zip(values_list, weights_list)
+    ]
+
+    distributions_matrix = np.array(discretized_distributions)
+    log_grid = np.log(grid)
+    cost_matrix = np.abs(log_grid.reshape(-1, 1) - log_grid.reshape(1, -1))
+
+    barycenter = ot.lp.barycenter(
+        distributions_matrix.T,
+        cost_matrix,
+        weights=None,
+        verbose=False,
+    )
+    return grid, barycenter
+
+
+def compute_lp_barycenter_on_grid(grid, values_list, weights_list):
+    """
+    Compute Wasserstein LP barycenter on a precomputed fixed grid.
+
+    Parameters
+    ----------
+    grid : np.ndarray
+        Fixed support grid used for all input distributions.
+    values_list : list of np.ndarray
+        Support values for each input distribution.
+    weights_list : list of np.ndarray
+        Per-sample weights for each input distribution.
+
+    Returns
+    -------
+    barycenter : np.ndarray
+        Barycenter weights on the provided grid.
+    """
+    if len(values_list) == 0:
+        raise ValueError("values_list must contain at least one distribution")
+    if len(values_list) != len(weights_list):
+        raise ValueError("values_list and weights_list must have the same length")
+
+    discretized_distributions = [
+        discretize_distribution(values, weights, grid)
+        for values, weights in zip(values_list, weights_list)
+    ]
+    distributions_matrix = np.array(discretized_distributions)
+
+    log_grid = np.log(grid)
+    cost_matrix = np.abs(log_grid.reshape(-1, 1) - log_grid.reshape(1, -1))
+
+    barycenter = ot.lp.barycenter(
+        distributions_matrix.T,
+        cost_matrix,
+        weights=None,
+        verbose=False,
+    )
+    return barycenter
+
+
 def load_barycenter(filepath):
     """
     Load a precomputed barycenter from .npz file.

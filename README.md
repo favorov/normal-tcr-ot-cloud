@@ -28,6 +28,7 @@ pip install scipy
 7. `olga-p2p-mds-plot-samples.py` — simplified MDS visualization (no barycenter)
 8. `olga-samples-p2b-pval.py` — statistical significance of sample distances
 9. `olga-p2p-ot-wilcoxon.py` — compare sample-vs-cloud distances to barycenter with one-sided Wilcoxon test
+10. `olga-brycenter-ot-bootstrap.py` — build bootstrap-based null distribution for p2b OT distances
 
 ---
 
@@ -69,6 +70,63 @@ python3 olga-barycenter-ot.py input/test-cloud-Tumeh2014 --barycenter my_barycen
 ```
 
 **Output:** Creates a file with barycenter grid points and weights (default: `input_folder/barycenter.npz`).
+
+---
+
+## olga-brycenter-ot-bootstrap.py
+
+Builds a null distribution of distances to barycenter for p2b OT analysis.
+
+### Usage
+
+```bash
+python3 olga-brycenter-ot-bootstrap.py <input_folder> [options]
+```
+
+### Workflow
+
+1. Ensures a reference barycenter exists (`--barycenter`):
+   - uses existing file if present,
+   - computes and saves it if missing.
+2. Adds all distances `cloud sample -> reference barycenter` to null distribution.
+3. Runs bootstrap iterations (`--bootstrap-n`, default `5000`):
+   - computes a bootstrap barycenter,
+   - selects a subset of bootstrap samples with share `--share-samples-to-null` (default `0.1`),
+   - computes subset distances to that iteration barycenter,
+   - appends distances to null distribution.
+4. Saves null sample to text file (`--output-null`, default `p2b-ot-null.txt`).
+
+### Parameters
+
+- `--freq-column <col>` — default: pgen
+- `--weights-column <col>` — default: duplicate_frequency_percent
+- `--n-grid <n>` — number of grid points for barycenter computation (default: 200)
+- `--barycenter <file>` — reference barycenter file (default: barycenter.npz)
+- `--bootstrap-n <n>` — number of bootstrap iterations (default: 5000)
+- `--share-samples-to-null <float>` — subset share per iteration in `(0,1]` (default: 0.1)
+- `--return-when-sample-samples` — sample subset with replacement (default is without replacement)
+- `--output-null <file>` — output text file with null distances (default: p2b-ot-null.txt)
+- `--seed <int>` — random seed (default: 42)
+- `--productive-filter` — filter only productive sequences (if productive column exists)
+- `--vdj-filter` — require non-empty `v_call`, `d_call`, `j_call` for columns that exist
+- `--vj-filter` — require non-empty `v_call`, `j_call` for columns that exist
+
+### Examples
+
+```bash
+# Default run
+python3 olga-brycenter-ot-bootstrap.py input/test-cloud-Tumeh2014
+
+# Faster run for quick checks
+python3 olga-brycenter-ot-bootstrap.py input/test-cloud-Tumeh2014 \
+    --bootstrap-n 200 --share-samples-to-null 0.2
+
+# Custom output and sampling-with-replacement for subset selection
+python3 olga-brycenter-ot-bootstrap.py input/test-cloud-Tumeh2014 \
+    --return-when-sample-samples --output-null my-null.txt
+```
+
+**Output:** Text file with one OT distance per line (null distribution sample).
 
 ---
 
