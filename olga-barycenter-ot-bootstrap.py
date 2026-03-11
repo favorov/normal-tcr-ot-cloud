@@ -254,6 +254,7 @@ def main():
         null_distances.extend(extra)
 
     null_array = np.array(null_distances, dtype=float)
+    null_array.sort()
     output_path.parent.mkdir(parents=True, exist_ok=True)
     np.savetxt(output_path, null_array, fmt="%.10e")
 
