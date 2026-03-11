@@ -70,6 +70,7 @@ python3 olga-barycenter-ot.py input/test-cloud-Tumeh2014 --barycenter my_barycen
 ```
 
 **Output:** Creates a file with barycenter grid points and weights (default: `input_folder/barycenter.npz`).
+Also prints barycenter computation time.
 
 ---
 
@@ -90,11 +91,19 @@ python3 olga-brycenter-ot-bootstrap.py <input_folder> [options]
    - computes and saves it if missing.
 2. Adds all distances `cloud sample -> reference barycenter` to null distribution.
 3. Runs bootstrap iterations (`--bootstrap-n`, default `5000`):
-   - computes a bootstrap barycenter,
+    - computes a bootstrap barycenter on the same fixed grid as the reference barycenter,
    - selects a subset of bootstrap samples with share `--share-samples-to-null` (default `0.1`),
    - computes subset distances to that iteration barycenter,
    - appends distances to null distribution.
-4. Saves null sample to text file (`--output-null`, default `p2b-ot-null.txt`).
+4. Sorts the null sample.
+5. Saves null sample to text file (`--output-null`, default `p2b-ot-null.txt`).
+
+### Implementation Notes
+
+- Reference barycenter and `olga-barycenter-ot.py` use the same shared LP barycenter code path from `ot_utils.py`.
+- The bootstrap resamples only the sample index list; the underlying distributions are reused unchanged.
+- The reference grid is computed once before bootstraps and reused in all bootstrap barycenter computations.
+- The script prints timing for the reference barycenter and rolling timing for bootstrap barycenters.
 
 ### Parameters
 
@@ -126,7 +135,7 @@ python3 olga-brycenter-ot-bootstrap.py input/test-cloud-Tumeh2014 \
     --return-when-sample-samples --output-null my-null.txt
 ```
 
-**Output:** Text file with one OT distance per line (null distribution sample).
+**Output:** Sorted text file with one OT distance per line (null distribution sample).
 
 ---
 

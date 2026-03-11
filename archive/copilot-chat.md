@@ -5,6 +5,63 @@
 
 ---
 
+## Сессия 10: Bootstrap null distribution для p2b (8-11 марта 2026)
+
+### Новый скрипт
+
+Добавлен скрипт:
+- `olga-brycenter-ot-bootstrap.py`
+
+Назначение:
+- построить нулевое распределение расстояний `sample -> barycenter` для p2b-анализа.
+
+### Логика работы
+
+1. Если reference barycenter отсутствует, он вычисляется и сохраняется.
+2. В null-выборку сначала добавляются расстояния от всех cloud samples до reference barycenter.
+3. Затем выполняются bootstrap-итерации:
+    - бутстрэп делается по списку индексов сэмплов,
+    - сами распределения не пересэмплируются и не меняются,
+    - bootstrap barycenter считается стандартным LP-способом,
+    - для доли сэмплов из bootstrap-list считаются расстояния до bootstrap barycenter,
+    - расстояния добавляются в null-выборку.
+4. Перед записью файл с null-выборкой сортируется.
+
+### Ключевые технические правки
+
+- Код вычисления barycenter унифицирован между:
+   - `olga-barycenter-ot.py`
+   - `olga-brycenter-ot-bootstrap.py`
+   - через общие helper-функции в `ot_utils.py`
+- Добавлены helper-функции:
+   - `compute_lp_barycenter(...)`
+   - `compute_lp_barycenter_on_grid(...)`
+- В bootstrap-скрипте grid больше не пересчитывается на каждой итерации:
+   - один раз строится reference grid,
+   - все bootstrap barycenter вычисляются на этой фиксированной grid.
+
+### Производительность и диагностика
+
+- Добавлен вывод времени вычисления barycenter в `olga-barycenter-ot.py`
+- В bootstrap-скрипте добавлен вывод:
+   - времени reference barycenter,
+   - времени последнего bootstrap barycenter,
+   - среднего времени по bootstrap-итерациям.
+
+### Документация
+
+Обновлены:
+- `README.md`
+- `.copilot-context.md`
+
+Сейчас документация отражает:
+- фиксированную grid в bootstrap-итерациях,
+- общий код-path для barycenter,
+- сортировку `p2b-ot-null.txt`,
+- вывод timing-информации.
+
+---
+
 ## Сессия 9: Wilcoxon сравнение sample vs cloud (6 марта 2026)
 
 ### Запрос пользователя
