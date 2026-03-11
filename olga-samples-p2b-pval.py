@@ -434,6 +434,9 @@ def main():
     if args.use_normal_approximation:
         use_normal_approx = True
 
+    # Show both p-values if null distribution is available and --normal-approximation is requested
+    show_both = use_null_distribution and args.use_normal_approximation
+
     # If not using null distribution, fit normal model
     if use_normal_approx or (not use_null_distribution and not args.use_normal_approximation):
         print("Computing distances for normal samples (barycenter files)...")
@@ -465,26 +468,27 @@ def main():
     # Compute p-values
     results = []
     for sample_file, distance in zip(samples_files, sample_distances):
-        # Compute p-value using selected method
+        result = {}
+        # Compute primary p-value
         if use_null_distribution and null_distribution is not None:
-            pvalue = compute_pvalue_from_null_distribution(distance, null_distribution)
-        elif use_normal_approx and model is not None:
-            pvalue = compute_pvalue(distance, model)
+            result['pvalue'] = compute_pvalue_from_null_distribution(distance, null_distribution)
+        elif model is not None:
+            result['pvalue'] = compute_pvalue(distance, model)
         else:
-            # Fallback to normal approximation if model available
-            if model is not None:
-                pvalue = compute_pvalue(distance, model)
-            else:
-                pvalue = 1.0
+            result['pvalue'] = 1.0
+        
+        # If showing both, also compute normal approximation p-value
+        if show_both and model is not None:
+            result['pvalue_normal'] = compute_pvalue(distance, model)
         
         # Use custom label if provided, otherwise auto-generate
         label = custom_labels.get(sample_file, _label_from_filename(sample_file))
-        results.append({
+        result.update({
             'filename': str(sample_file),
             'sample': label,
             'distance': distance,
-            'pvalue': pvalue
         })
+        results.append(result)
 
     # Compute Bonferroni-adjusted p-values
     raw_pvalues = [r['pvalue'] for r in results]
@@ -492,21 +496,39 @@ def main():
     for r, adj_p in zip(results, adjusted_pvalues):
         r['pvalue_adjusted'] = adj_p
 
+    if show_both:
+        raw_pvalues_normal = [r['pvalue_normal'] for r in results]
+        adjusted_pvalues_normal = compute_bonferroni_adjusted_pvalues(raw_pvalues_normal)
+        for r, adj_p in zip(results, adjusted_pvalues_normal):
+            r['pvalue_normal_adjusted'] = adj_p
+
     # Sort by adjusted p-value
     results = sorted(results, key=lambda x: x['pvalue_adjusted'])
 
     # Print table
     print()
-    print("=" * 115)
-    print(f"{'Label':<8} {'Filename':<50} {'Distance':>11} {'P-value':>12} {'Bonf. p':>11}")
-    print("=" * 115)
-    for row in results:
-        print(f"{row['sample']:<8} {row['filename']:<50} {row['distance']:>11.6f} {row['pvalue']:>12.6e} {row['pvalue_adjusted']:>11.6e}")
-    print("=" * 115)
+    if show_both:
+        print("=" * 153)
+        print(f"{'Label':<8} {'Filename':<50} {'Distance':>11} {'P-val(null)':>12} {'Bonf.(null)':>12} {'P-val(norm)':>12} {'Bonf.(norm)':>12}")
+        print("=" * 153)
+        for row in results:
+            print(f"{row['sample']:<8} {row['filename']:<50} {row['distance']:>11.6f} {row['pvalue']:>12.6e} {row['pvalue_adjusted']:>12.6e} {row['pvalue_normal']:>12.6e} {row['pvalue_normal_adjusted']:>12.6e}")
+        print("=" * 153)
+    else:
+        print("=" * 115)
+        print(f"{'Label':<8} {'Filename':<50} {'Distance':>11} {'P-value':>12} {'Bonf. p':>11}")
+        print("=" * 115)
+        for row in results:
+            print(f"{row['sample']:<8} {row['filename']:<50} {row['distance']:>11.6f} {row['pvalue']:>12.6e} {row['pvalue_adjusted']:>11.6e}")
+        print("=" * 115)
     print()
 
     # Print method info
-    if use_null_distribution:
+    if show_both:
+        print(f"P-value computation methods:")
+        print(f"  P-val(null): Empirical null distribution ({len(null_distribution)} values)")
+        print(f"  P-val(norm): Normal approximation fitted to barycenter samples ({model['description']})")
+    elif use_null_distribution:
         print(f"P-value computation method: Empirical null distribution ({len(null_distribution)} values)")
     else:
         print(f"P-value computation method: Normal approximation")
@@ -520,16 +542,32 @@ def main():
     print(f"  Total samples: {len(results)}")
     print(f"  Number of tests (for Bonferroni correction): {len(results)}")
     print()
-    print(f"  Raw p-values:")
+    label_raw = "P-val(null)" if show_both else "Raw p-values"
+    print(f"  {label_raw}:")
     print(f"    Range: [{min(pvalues_raw):.6e}, {max(pvalues_raw):.6e}]")
     print(f"    Significant (p < 0.05): {sum(1 for p in pvalues_raw if p < 0.05)}")
     print(f"    Significant (p < 0.01): {sum(1 for p in pvalues_raw if p < 0.01)}")
     print()
-    print(f"  Bonferroni-adjusted p-values (FWER control):")
+    label_adj = "Bonf.(null)" if show_both else "Bonferroni-adjusted p-values (FWER control)"
+    print(f"  {label_adj}:")
     print(f"    Range: [{min(pvalues_adj):.6e}, {max(pvalues_adj):.6e}]")
     print(f"    Significant (p_adj < 0.05): {sum(1 for p in pvalues_adj if p < 0.05)}")
     print(f"    Significant (p_adj < 0.01): {sum(1 for p in pvalues_adj if p < 0.01)}")
     print()
+
+    if show_both:
+        pvalues_normal_raw = [r['pvalue_normal'] for r in results]
+        pvalues_normal_adj = [r['pvalue_normal_adjusted'] for r in results]
+        print(f"  P-val(norm):")
+        print(f"    Range: [{min(pvalues_normal_raw):.6e}, {max(pvalues_normal_raw):.6e}]")
+        print(f"    Significant (p < 0.05): {sum(1 for p in pvalues_normal_raw if p < 0.05)}")
+        print(f"    Significant (p < 0.01): {sum(1 for p in pvalues_normal_raw if p < 0.01)}")
+        print()
+        print(f"  Bonf.(norm):")
+        print(f"    Range: [{min(pvalues_normal_adj):.6e}, {max(pvalues_normal_adj):.6e}]")
+        print(f"    Significant (p_adj < 0.05): {sum(1 for p in pvalues_normal_adj if p < 0.05)}")
+        print(f"    Significant (p_adj < 0.01): {sum(1 for p in pvalues_normal_adj if p < 0.01)}")
+        print()
 
 
 if __name__ == "__main__":
