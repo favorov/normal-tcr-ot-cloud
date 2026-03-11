@@ -267,6 +267,60 @@ def compute_pvalue(distance, model):
         raise ValueError(f"Unknown model type: {model['model_type']}")
 
 
+def load_null_distribution(null_distribution_path):
+    """
+    Load null distribution from text file.
+    
+    Parameters
+    ----------
+    null_distribution_path : Path or str
+        Path to text file with one distance value per line
+        
+    Returns
+    -------
+    null_distribution : np.ndarray
+        1D array of null distribution values
+    """
+    null_distribution_path = Path(os.path.expanduser(str(null_distribution_path)))
+    if not null_distribution_path.exists():
+        raise FileNotFoundError(f"Null distribution file not found: {null_distribution_path}")
+    
+    null_values = np.loadtxt(null_distribution_path)
+    return null_values
+
+
+def compute_pvalue_from_null_distribution(distance, null_distribution):
+    """
+    Compute p-value from empirical null distribution.
+    
+    p-value is computed as the proportion of null observations >= observed distance.
+    For distances greater than max(null_distribution), use 1 / n_null as lower bound.
+    
+    Parameters
+    ----------
+    distance : float
+        Observed distance from sample to barycenter
+    null_distribution : np.ndarray
+        1D array of null distribution values
+        
+    Returns
+    -------
+    pvalue : float
+        Empirical p-value
+    """
+    n_null = len(null_distribution)
+    # Count how many null observations are >= distance
+    count = np.sum(null_distribution >= distance)
+    
+    if count == 0:
+        # No null observations >= distance, use lower bound
+        pvalue = 1.0 / n_null
+    else:
+        pvalue = count / n_null
+    
+    return pvalue
+
+
 def parse_args():
     """Parse CLI arguments."""
     parser = argparse.ArgumentParser(
@@ -287,6 +341,24 @@ def parse_args():
     parser.add_argument("--productive-filter", action="store_true", dest="productive_filter")
     parser.add_argument("--vdj-filter", action="store_true", dest="vdj_filter")
     parser.add_argument("--vj-filter", action="store_true", dest="vj_filter")
+    parser.add_argument(
+        "--null-distribution",
+        default=None,
+        dest="null_distribution_file",
+        help="Path to null distribution file (default: p2b-ot-null.txt in barycenter folder)"
+    )
+    parser.add_argument(
+        "--normal-approximation",
+        action="store_true",
+        dest="use_normal_approximation",
+        help="Use normal approximation instead of empirical null distribution"
+    )
+    parser.add_argument(
+        "--no-null-distribution",
+        action="store_true",
+        dest="no_null_distribution",
+        help="Do not use null distribution (use normal approximation only)"
+    )
     return parser.parse_args()
 
 
@@ -324,18 +396,64 @@ def main():
 
     print(f"Found {len(barycenter_files)} barycenter files, {len(samples_files)} sample files")
 
-    # Compute distances for barycenter files (normal samples)
-    print("Computing distances for normal samples (barycenter files)...")
-    barycenter_distances, extended_grid, extended_barycenter = _compute_distances_to_barycenter(
-        barycenter_files, grid, barycenter_weights,
-        freq_column, weights_column, productive_filter, vdj_filter, vj_filter
-    )
+    # Determine p-value computation method
+    use_null_distribution = False
+    use_normal_approx = False
+    null_distribution = None
+    model = None
 
-    # Fit null hypothesis model
-    print("Fitting null hypothesis model...")
-    model = fit_null_hypothesis(barycenter_distances)
-    print(f"  Model: {model['description']}")
-    print()
+    if args.no_null_distribution:
+        # Explicitly disabled null distribution, use normal approximation only
+        use_normal_approx = True
+    else:
+        # Try to load null distribution
+        if args.null_distribution_file:
+            # User specified custom null distribution path
+            null_dist_path = args.null_distribution_file
+        else:
+            # Default: look for p2b-ot-null.txt in barycenter folder
+            null_dist_path = barycenter_folder / "p2b-ot-null.txt"
+        
+        if Path(null_dist_path).exists():
+            try:
+                null_distribution = load_null_distribution(null_dist_path)
+                use_null_distribution = True
+                print(f"Loaded null distribution from {null_dist_path} ({len(null_distribution)} values)")
+            except Exception as e:
+                print(f"Warning: Failed to load null distribution: {e}")
+                use_normal_approx = True
+        elif args.null_distribution_file:
+            # User explicitly specified a file that doesn't exist
+            print(f"Error: Null distribution file not found: {null_dist_path}")
+            sys.exit(1)
+        else:
+            # Default file not found, fall back to normal approximation
+            use_normal_approx = True
+    
+    # If normal approximation is explicitly requested, use it
+    if args.use_normal_approximation:
+        use_normal_approx = True
+
+    # If not using null distribution, fit normal model
+    if use_normal_approx or (not use_null_distribution and not args.use_normal_approximation):
+        print("Computing distances for normal samples (barycenter files)...")
+        barycenter_distances, extended_grid, extended_barycenter = _compute_distances_to_barycenter(
+            barycenter_files, grid, barycenter_weights,
+            freq_column, weights_column, productive_filter, vdj_filter, vj_filter
+        )
+        
+        print("Fitting normal distribution model...")
+        model = fit_null_hypothesis(barycenter_distances)
+        print(f"  Model: {model['description']}")
+        print()
+    else:
+        # Using null distribution, still need to compute extended grid from barycenter files
+        print("Computing extended grid from barycenter files...")
+        barycenter_distances, extended_grid, extended_barycenter = _compute_distances_to_barycenter(
+            barycenter_files, grid, barycenter_weights,
+            freq_column, weights_column, productive_filter, vdj_filter, vj_filter
+        )
+        print()
 
     # Compute distances and p-values for sample files
     print("Computing distances and p-values for sample files...")
@@ -347,7 +465,18 @@ def main():
     # Compute p-values
     results = []
     for sample_file, distance in zip(samples_files, sample_distances):
-        pvalue = compute_pvalue(distance, model)
+        # Compute p-value using selected method
+        if use_null_distribution and null_distribution is not None:
+            pvalue = compute_pvalue_from_null_distribution(distance, null_distribution)
+        elif use_normal_approx and model is not None:
+            pvalue = compute_pvalue(distance, model)
+        else:
+            # Fallback to normal approximation if model available
+            if model is not None:
+                pvalue = compute_pvalue(distance, model)
+            else:
+                pvalue = 1.0
+        
         # Use custom label if provided, otherwise auto-generate
         label = custom_labels.get(sample_file, _label_from_filename(sample_file))
         results.append({
@@ -374,6 +503,13 @@ def main():
     for row in results:
         print(f"{row['sample']:<8} {row['filename']:<50} {row['distance']:>11.6f} {row['pvalue']:>12.6e} {row['pvalue_adjusted']:>11.6e}")
     print("=" * 115)
+    print()
+
+    # Print method info
+    if use_null_distribution:
+        print(f"P-value computation method: Empirical null distribution ({len(null_distribution)} values)")
+    else:
+        print(f"P-value computation method: Normal approximation")
     print()
 
     # Print summary statistics
